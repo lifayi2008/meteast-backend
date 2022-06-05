@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { TasksModule } from './tasks/tasks.module';
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
+import { QueueModule } from './queue/queue.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { BullModule } from '@nestjs/bull';
     }),
     AppModule,
     TasksModule,
+    QueueModule,
   ],
   exports: [],
   providers: [],
