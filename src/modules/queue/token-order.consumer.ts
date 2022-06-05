@@ -1,19 +1,21 @@
 import { Processor, Process, InjectQueue } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
 import { Logger } from '@nestjs/common';
-import { Sleep } from '../../utils/utils';
+import { QueueService } from './queue.service';
 
 @Processor('tokenOnOffSaleQueue')
 export class TokenOrderConsumer {
   private readonly logger = new Logger('TokenOrderConsumer');
 
-  constructor(@InjectQueue('tokenOnOffSaleQueue') private tokenOnOffSaleQueue: Queue) {}
+  constructor(
+    private queueService: QueueService,
+    @InjectQueue('tokenOnOffSaleQueue') private tokenOnOffSaleQueue: Queue,
+  ) {}
 
   @Process()
-  async transcode(job: Job<unknown>) {
+  async transcode(job: Job<{ tokenId: string; from: string; to: string }>) {
     await this.tokenOnOffSaleQueue.pause();
-    await Sleep(3000);
-    this.logger.log(JSON.stringify(job.data));
+    await this.queueService.onOffSale(job.data.tokenId, job.data.from, job.data.to);
     await this.tokenOnOffSaleQueue.resume();
   }
 }

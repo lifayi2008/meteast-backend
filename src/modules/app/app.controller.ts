@@ -29,24 +29,9 @@ export class AppController {
     DIDBackend.initialize(new MyDIDAdapter());
   }
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
-  }
-
   @Get('/listBanner')
   async listBanner(@Query('location') location: string): Promise<CommonResponse> {
     return await this.appService.listBanner(location);
-  }
-
-  @Get('/onOffSale')
-  async onOffSale(
-    @Query('tokenId') tokenId: string,
-    @Query('operation') operation: string,
-    @Query('blockNumber') blockNumber: number,
-  ): Promise<CommonResponse> {
-    this.logger.log(`onOffSale:${blockNumber} ${tokenId} ${operation}`);
-    return await this.appService.onOffSale(tokenId, operation);
   }
 
   @Post('/login')

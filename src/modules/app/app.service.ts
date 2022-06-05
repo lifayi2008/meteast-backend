@@ -16,10 +16,6 @@ export class AppService {
     private authService: AuthService,
   ) {}
 
-  getHello(): string {
-    return 'Hello World!';
-  }
-
   async listBanner(location: string): Promise<CommonResponse> {
     const data = await this.connection
       .collection('banners')
@@ -28,18 +24,6 @@ export class AppService {
       .project({ _id: 0 })
       .toArray();
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
-  }
-
-  async onOffSale(tokenId: string, operation: string) {
-    if (operation === 'onSale') {
-      await this.connection
-        .collection('token_on_order')
-        .updateOne({ tokenId }, { $set: { tokenId } }, { upsert: true });
-    } else {
-      await this.connection.collection('token_on_order').deleteOne({ tokenId });
-    }
-
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 
   async login(user: User): Promise<CommonResponse> {
