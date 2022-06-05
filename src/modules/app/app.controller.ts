@@ -2,14 +2,13 @@ import {
   Request,
   Controller,
   Get,
-  HttpStatus,
   Post,
   Query,
-  Req,
   UseGuards,
   BadRequestException,
-  Body, Logger
-} from "@nestjs/common";
+  Body,
+  Logger,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { CommonResponse, UserType } from '../common/interfaces';
 import { DIDBackend, VerifiablePresentation } from '@elastosfoundation/did-js-sdk';
@@ -27,11 +26,6 @@ export class AppController {
   private user: any;
   constructor(private readonly appService: AppService) {
     DIDBackend.initialize(new MyDIDAdapter());
-  }
-
-  @Get('/listBanner')
-  async listBanner(@Query('location') location: string): Promise<CommonResponse> {
-    return await this.appService.listBanner(location);
   }
 
   @Post('/login')
@@ -74,21 +68,50 @@ export class AppController {
     return await this.appService.login(user);
   }
 
+  @Get('/listBanner')
+  async listBanner(@Query('location') location: string): Promise<CommonResponse> {
+    return await this.appService.listBanner(location);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('/incTokenViews')
-  async incTokenViews(@Body() viewOrLikeDTO: ViewOrLikeDTO): Promise<CommonResponse> {
-    return await this.appService.incTokenViews(viewOrLikeDTO);
+  async incTokenViews(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
+    dto.address = req.user.address;
+    return await this.appService.incTokenViews(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/incBlindBoxViews')
+  async incBlindBoxViews(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
+    dto.address = req.user.address;
+    return await this.appService.incBlindBoxViews(dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('/incTokenLikes')
-  async incTokenLikes(@Body() viewOrLikeDTO: ViewOrLikeDTO): Promise<CommonResponse> {
-    return await this.appService.incTokenLikes(viewOrLikeDTO);
+  async incTokenLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
+    dto.address = req.user.address;
+    return await this.appService.incTokenLikes(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/incBlindBoxLikes')
+  async incBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
+    dto.address = req.user.address;
+    return await this.appService.incBlindBoxLikes(dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('/decTokenLikes')
-  async decTokenLikes(@Body() viewOrLikeDTO: ViewOrLikeDTO): Promise<CommonResponse> {
-    return await this.appService.decTokenLikes(viewOrLikeDTO);
+  async decTokenLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
+    dto.address = req.user.address;
+    return await this.appService.decTokenLikes(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/decBlindBoxLikes')
+  async decBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
+    dto.address = req.user.address;
+    return await this.appService.decBlindBoxLikes(dto);
   }
 }

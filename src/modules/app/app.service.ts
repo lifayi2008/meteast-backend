@@ -40,44 +40,93 @@ export class AppService {
   }
 
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {
-    const { did, tokenId, blindBoxIndex } = viewOrLikeDTO;
-    if (tokenId) {
-      await this.connection
-        .collection('token_views')
-        .replaceOne({ tokenId, did }, { did, tokenId, isTokenId: 1 }, { upsert: true });
-    } else {
-      await this.connection
-        .collection('token_views')
-        .replaceOne({ blindBoxIndex, did }, { did, blindBoxIndex, isTokenId: 0 }, { upsert: true });
-    }
+    const { address, tokenId } = viewOrLikeDTO;
 
+    const result = await this.connection
+      .collection('token_views')
+      .replaceOne({ tokenId, address }, { address, tokenId }, { upsert: true });
+
+    if (result.upsertedCount === 1) {
+      await this.connection
+        .collection('token_views_likes')
+        .updateOne({ tokenId }, { $inc: { views: 1 } }, { upsert: true });
+    }
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async incBlindBoxViews(viewOrLikeDTO: ViewOrLikeDTO) {
+    const { address, blindBoxIndex } = viewOrLikeDTO;
+
+    const result = await this.connection
+      .collection('blind_box_views')
+      .replaceOne({ blindBoxIndex, address }, { blindBoxIndex, address }, { upsert: true });
+
+    if (result.upsertedCount === 1) {
+      await this.connection
+        .collection('blind_box_views_likes')
+        .updateOne({ blindBoxIndex }, { $inc: { views: 1 } }, { upsert: true });
+    }
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 
   async incTokenLikes(viewOrLikeDTO: ViewOrLikeDTO) {
-    const { did, tokenId, blindBoxIndex } = viewOrLikeDTO;
-    if (tokenId) {
+    const { address, tokenId } = viewOrLikeDTO;
+
+    const result = await this.connection
+      .collection('token_likes')
+      .replaceOne({ tokenId, address }, { address, tokenId }, { upsert: true });
+
+    if (result.upsertedCount === 1) {
       await this.connection
-        .collection('token_likes')
-        .replaceOne({ tokenId, did }, { did, tokenId, isTokenId: 1 }, { upsert: true });
-    } else {
-      await this.connection
-        .collection('token_likes')
-        .replaceOne({ blindBoxIndex, did }, { did, blindBoxIndex, isTokenId: 0 }, { upsert: true });
+        .collection('token_views_likes')
+        .updateOne({ tokenId }, { $inc: { likes: 1 } }, { upsert: true });
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 
-  async decTokenLikes(viewOrLikeDTO: ViewOrLikeDTO) {
-    const { did, tokenId, blindBoxIndex } = viewOrLikeDTO;
+  async incBlindBoxLikes(viewOrLikeDTO: ViewOrLikeDTO) {
+    const { address, blindBoxIndex } = viewOrLikeDTO;
 
-    await this.connection.collection('token_likes').deleteOne({
-      $or: [
-        { tokenId, did },
-        { blindBoxIndex, did },
-      ],
-    });
+    const result = await this.connection
+      .collection('blind_box_likes')
+      .replaceOne({ blindBoxIndex, address }, { blindBoxIndex, address }, { upsert: true });
+
+    if (result.upsertedCount === 1) {
+      await this.connection
+        .collection('blind_box_views_likes')
+        .updateOne({ blindBoxIndex }, { $inc: { likes: 1 } }, { upsert: true });
+    }
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async decTokenLikes(viewOrLikeDTO: ViewOrLikeDTO) {
+    const { address, tokenId } = viewOrLikeDTO;
+
+    const result = await this.connection.collection('token_likes').deleteOne({ tokenId, address });
+
+    if (result.deletedCount === 1) {
+      await this.connection
+        .collection('token_views_likes')
+        .updateOne({ tokenId }, { $inc: { likes: -1 } });
+    }
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async decBlindBoxLikes(viewOrLikeDTO: ViewOrLikeDTO) {
+    const { address, blindBoxIndex } = viewOrLikeDTO;
+
+    const result = await this.connection
+      .collection('blind_box_likes')
+      .deleteOne({ blindBoxIndex, address });
+
+    if (result.deletedCount === 1) {
+      await this.connection
+        .collection('blind_box_views_likes')
+        .updateOne({ blindBoxIndex }, { $inc: { likes: -1 } });
+    }
+
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 }

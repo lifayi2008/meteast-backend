@@ -1,5 +1,5 @@
 export class ViewOrLikeDTO {
-  did: string;
+  address: string;
   tokenId?: string;
   blindBoxIndex?: number;
 }
