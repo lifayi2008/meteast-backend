@@ -8,8 +8,8 @@ import {
   Req,
   UseGuards,
   BadRequestException,
-  Body,
-} from '@nestjs/common';
+  Body, Logger
+} from "@nestjs/common";
 import { AppService } from './app.service';
 import { CommonResponse, UserType } from '../common/interfaces';
 import { DIDBackend, VerifiablePresentation } from '@elastosfoundation/did-js-sdk';
@@ -22,6 +22,8 @@ import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
 
 @Controller()
 export class AppController {
+  private readonly logger = new Logger('AppController');
+
   private user: any;
   constructor(private readonly appService: AppService) {
     DIDBackend.initialize(new MyDIDAdapter());
@@ -42,6 +44,7 @@ export class AppController {
     @Query('tokenId') tokenId: string,
     @Query('operation') operation: string,
   ): Promise<CommonResponse> {
+    this.logger.log(`onOffSale: ${tokenId} ${operation}`);
     return await this.appService.onOffSale(tokenId, operation);
   }
 
