@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { QueueService } from './queue.service';
+import { TokenOrderConsumer } from './token-order.consumer';
 
 @Module({
   imports: [
@@ -8,6 +9,6 @@ import { QueueService } from './queue.service';
       name: 'tokenOnOffSaleQueue',
     }),
   ],
-  providers: [QueueService],
+  providers: [QueueService, TokenOrderConsumer],
 })
 export class QueueModule {}
