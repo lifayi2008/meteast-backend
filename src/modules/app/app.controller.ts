@@ -43,8 +43,9 @@ export class AppController {
   async onOffSale(
     @Query('tokenId') tokenId: string,
     @Query('operation') operation: string,
+    @Query('blockNumber') blockNumber: number,
   ): Promise<CommonResponse> {
-    this.logger.log(`onOffSale: ${tokenId} ${operation}`);
+    this.logger.log(`onOffSale:${blockNumber} ${tokenId} ${operation}`);
     return await this.appService.onOffSale(tokenId, operation);
   }
 
