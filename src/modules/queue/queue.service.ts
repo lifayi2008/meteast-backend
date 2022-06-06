@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Queue } from 'bull';
-import { InjectQueue } from '@nestjs/bull';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
@@ -13,7 +11,6 @@ export class QueueService {
   constructor(
     private configService: ConfigService,
     @InjectConnection() private readonly connection: Connection,
-    @InjectQueue('tokenOnOffSaleQueue') private tokenOnOffSaleQueue: Queue,
   ) {
     this.contractMarket = this.configService.get('CONTRACT_MARKET');
   }
