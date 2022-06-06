@@ -18,6 +18,8 @@ import { User } from './interfaces';
 import { LoginDTO } from './dto/LoginDTO';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
+import { UserProfileDTO } from './dto/UserProfileDTO';
+import Web3 from 'web3';
 
 @Controller()
 export class AppController {
@@ -73,6 +75,36 @@ export class AppController {
     return await this.appService.listBanner(location);
   }
 
+  @Get('/getPopularityOfTokens')
+  async getPopularityOfTokens(
+    @Query('pageSize') pageSize: number,
+    @Query('pageNum') pageNum: number,
+  ): Promise<CommonResponse> {
+    if (pageSize <= 0 || pageSize > 50) {
+      pageSize = 20;
+    }
+    if (pageNum < 0) {
+      pageNum = 1;
+    }
+    return await this.appService.getPopularityOfTokens(pageNum, pageSize);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/getFavoritesCollectible')
+  async getFavoritesCollectible(
+    @Query('pageSize') pageSize: number,
+    @Query('pageNum') pageNum: number,
+    @Request() req,
+  ): Promise<CommonResponse> {
+    if (pageSize <= 0 || pageSize > 50) {
+      pageSize = 20;
+    }
+    if (pageNum < 0) {
+      pageNum = 1;
+    }
+    return await this.appService.getFavoritesCollectible(pageNum, pageSize, req.user.address);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('/incTokenViews')
   async incTokenViews(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
@@ -113,5 +145,25 @@ export class AppController {
   async decBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
     return await this.appService.decBlindBoxLikes(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/updateUserProfile')
+  async updateUserProfile(@Body() dto: UserProfileDTO, @Request() req): Promise<CommonResponse> {
+    const address = new Web3().eth.accounts.recover(
+      `Update profile with ${dto.did}`,
+      dto.signature,
+    );
+    if (address !== req.user.address) {
+      throw new BadRequestException('Invalid Request Params');
+    }
+
+    return await this.appService.updateUserProfile(dto, req.user.address);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/getUserProfile')
+  async getUserProfile(@Request() req): Promise<CommonResponse> {
+    return await this.appService.getUserProfile(req.user.address);
   }
 }

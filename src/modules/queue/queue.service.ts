@@ -20,13 +20,19 @@ export class QueueService {
 
   async onOffSale(tokenId: string, from: string, to: string, blockNumber: number) {
     if (to === this.contractMarket) {
-      await this.connection.collection('token_on_order').insertOne({ tokenId, blockNumber });
+      await this.connection
+        .collection('token_on_order')
+        .updateOne({ tokenId, blockNumber }, { $inc: { count: 1 } }, { upsert: true });
     } else if (from === this.contractMarket) {
       await this.connection
         .collection('token_on_order')
-        .deleteOne({ tokenId, blockNumber: { $lt: blockNumber } });
+        .updateOne({ tokenId, count: { $gt: 0 } }, { $inc: { count: -1 } });
     } else {
       this.logger.warn(`Token ${tokenId} is in unknow status`);
     }
+  }
+
+  async createToken(tokenId: string, createTime: number) {
+    await this.connection.collection('tokens').updateOne({ tokenId }, { $set: createTime });
   }
 }

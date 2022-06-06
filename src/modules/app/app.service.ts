@@ -7,6 +7,7 @@ import { Constants } from '../common/constants';
 import { User } from './interfaces';
 import { AuthService } from '../auth/auth.service';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
+import { UserProfileDTO } from './dto/UserProfileDTO';
 
 @Injectable()
 export class AppService {
@@ -15,16 +16,6 @@ export class AppService {
     private configService: ConfigService,
     private authService: AuthService,
   ) {}
-
-  async listBanner(location: string): Promise<CommonResponse> {
-    const data = await this.connection
-      .collection('banners')
-      .find({ location, active: 1, status: '1' })
-      .sort({ sort: 1 })
-      .project({ _id: 0 })
-      .toArray();
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
-  }
 
   async login(user: User): Promise<CommonResponse> {
     const { address, ...rest } = user;
@@ -37,6 +28,53 @@ export class AppService {
       message: Constants.MSG_SUCCESS,
       data: await this.authService.login(user),
     };
+  }
+
+  async listBanner(location: string): Promise<CommonResponse> {
+    const data = await this.connection
+      .collection('banners')
+      .find({ location, active: 1, status: '1' })
+      .sort({ sort: 1 })
+      .project({ _id: 0 })
+      .toArray();
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
+
+  async getPopularityOfTokens(pageNum: number, pageSize: number): Promise<CommonResponse> {
+    const total = this.connection.collection('token_on_order').find({ count: 1 }).bufferedCount();
+    const data = await this.connection
+      .collection('token_on_order')
+      .aggregate([
+        { $match: { count: 1 } },
+        {
+          $lookup: {
+            from: 'token_views_likes',
+            localField: 'tokenId',
+            foreignField: 'tokenId',
+            as: 'token',
+          },
+        },
+        { $unwind: '$token' },
+        { $sort: { 'token.likes': -1, 'token.views': -1 } },
+        { $skip: (pageNum - 1) * pageSize },
+        { $limit: pageSize },
+      ])
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
+  async getFavoritesCollectible(pageNum: number, pageSize: number, address) {
+    const total = this.connection.collection('token_likes').find({ address }).bufferedCount();
+    const data = await this.connection
+      .collection('token_likes')
+      .find({ address })
+      .project({ _id: 0, tokenId: 1 })
+      .skip((pageNum - 1) * pageSize)
+      .limit(pageSize)
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {
@@ -128,5 +166,26 @@ export class AppService {
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async updateUserProfile(dto: UserProfileDTO, address: string): Promise<CommonResponse> {
+    const { name, description, avatar, coverImage } = dto;
+    await this.connection.collection('users').updateOne(
+      { address },
+      {
+        $set: {
+          name,
+          description,
+          avatar,
+          coverImage,
+        },
+      },
+    );
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async getUserProfile(address: string): Promise<CommonResponse> {
+    const data = await this.connection.collection('users').findOne({ address });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 }

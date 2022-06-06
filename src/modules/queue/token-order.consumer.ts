@@ -25,5 +25,6 @@ export class TokenOrderConsumer {
       job.data.blockNumber,
     );
     await this.tokenOnOffSaleQueue.resume();
+    await this.tokenOnOffSaleQueue.clean(5000);
   }
 }

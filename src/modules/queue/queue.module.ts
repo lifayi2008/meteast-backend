@@ -8,6 +8,9 @@ import { TokenOrderConsumer } from './token-order.consumer';
     BullModule.registerQueue({
       name: 'tokenOnOffSaleQueue',
     }),
+    BullModule.registerQueue({
+      name: 'tokenCreateQueue',
+    }),
   ],
   providers: [QueueService, TokenOrderConsumer],
 })
