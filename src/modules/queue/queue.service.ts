@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
+import { Sleep } from '../../utils/utils';
 
 @Injectable()
 export class QueueService {
@@ -21,15 +22,20 @@ export class QueueService {
         .collection('token_on_order')
         .updateOne({ tokenId, blockNumber }, { $inc: { count: 1 } }, { upsert: true });
     } else if (from === this.contractMarket) {
-      await this.connection
+      const result = await this.connection
         .collection('token_on_order')
         .updateOne({ tokenId, count: { $gt: 0 } }, { $inc: { count: -1 } });
-    } else {
-      this.logger.warn(`Token ${tokenId} is in unknow status`);
+      if (result.modifiedCount === 0) {
+        this.logger.warn(`Token ${tokenId} is not on sale`);
+        await Sleep(5000);
+        await this.onOffSale(tokenId, to, from, blockNumber);
+      }
     }
   }
 
   async createToken(tokenId: string, createTime: number) {
-    await this.connection.collection('tokens').updateOne({ tokenId }, { $set: createTime });
+    await this.connection
+      .collection('tokens')
+      .updateOne({ tokenId }, { $set: { createTime } }, { upsert: true });
   }
 }

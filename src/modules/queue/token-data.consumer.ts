@@ -15,21 +15,17 @@ export class TokenDataConsumer {
   @Process('token-on-off-sale')
   async tokenSale(job: Job<{ blockNumber: number; tokenId: string; from: string; to: string }>) {
     this.logger.log(`Processing job ['token-on-off-sale'] data: ${JSON.stringify(job.data)}`);
-    await this.tokenDataQueue.pause();
     await this.queueService.onOffSale(
       job.data.tokenId,
       job.data.from,
       job.data.to,
       job.data.blockNumber,
     );
-    await this.tokenDataQueue.resume();
   }
 
   @Process('token-create')
   async tokenCreate(job: Job<{ tokenId: string; createTime: number }>) {
     this.logger.log(`Processing job ['token-create'] data: ${JSON.stringify(job.data)}`);
-    await this.tokenDataQueue.pause();
     await this.queueService.createToken(job.data.tokenId, job.data.createTime);
-    await this.tokenDataQueue.resume();
   }
 }
