@@ -3,6 +3,8 @@ import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Sleep } from '../../utils/utils';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class QueueService {
@@ -12,6 +14,7 @@ export class QueueService {
   constructor(
     private configService: ConfigService,
     @InjectConnection() private readonly connection: Connection,
+    @InjectQueue('token-data-queue') private tokenDataQueue: Queue,
   ) {
     this.contractMarket = this.configService.get('CONTRACT_MARKET');
   }
@@ -26,9 +29,16 @@ export class QueueService {
         .collection('token_on_order')
         .updateOne({ tokenId, count: { $gt: 0 } }, { $inc: { count: -1 } });
       if (result.modifiedCount === 0) {
-        this.logger.warn(`Token ${tokenId} is not on sale`);
+        this.logger.warn(
+          `Token ${tokenId} is not in database, so put the related job into the queue again`,
+        );
         await Sleep(5000);
-        await this.onOffSale(tokenId, to, from, blockNumber);
+        await this.tokenDataQueue.add('token-on-off-sale', {
+          blockNumber,
+          from,
+          to,
+          tokenId,
+        });
       }
     }
   }
