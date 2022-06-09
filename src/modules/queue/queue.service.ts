@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { Sleep } from '../../utils/utils';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { OrderType } from '../common/interfaces';
 
 @Injectable()
 export class QueueService {
@@ -32,7 +33,7 @@ export class QueueService {
         this.logger.warn(
           `Token ${tokenId} is not in database, so put the related job into the queue again`,
         );
-        await Sleep(5000);
+        await Sleep(1000);
         await this.tokenDataQueue.add('token-on-off-sale', {
           blockNumber,
           from,
@@ -43,9 +44,28 @@ export class QueueService {
     }
   }
 
-  async createToken(tokenId: string, createTime: number) {
+  async createToken(tokenId: string, blockNumber: number, createTime: number, category: string) {
     await this.connection
       .collection('tokens')
-      .updateOne({ tokenId }, { $set: { createTime } }, { upsert: true });
+      .updateOne({ tokenId }, { $set: { blockNumber, createTime, category } }, { upsert: true });
+  }
+
+  async updateToken(
+    blockNumber: number,
+    tokenId: string,
+    orderId: number,
+    orderType: OrderType,
+    orderPrice: number,
+  ) {
+    await this.connection
+      .collection('tokens')
+      .updateOne(
+        { tokenId, blockNumber: { $gt: blockNumber } },
+        { $set: { orderId, orderType, orderPrice } },
+      );
+  }
+
+  async updateTokenPrice(orderId: number, orderPrice: number) {
+    await this.connection.collection('tokens').updateOne({ orderId }, { $set: { orderPrice } });
   }
 }

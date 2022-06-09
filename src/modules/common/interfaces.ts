@@ -9,3 +9,8 @@ export enum UserType {
   User = 2,
   M,
 }
+
+export enum OrderType {
+  Sale = 1,
+  Auction,
+}
