@@ -57,6 +57,26 @@ export class TokenDataConsumer {
     );
   }
 
+  @Process('update-token-again')
+  async updateTokenAgain(
+    job: Job<{
+      blockNumber: number;
+      tokenId: string;
+      orderId: number;
+      orderType: OrderType;
+      orderPrice: number;
+    }>,
+  ) {
+    this.logger.log(`Processing job ['token-update-again'] data: ${JSON.stringify(job.data)}`);
+    await this.queueService.updateTokenAgain(
+      job.data.blockNumber,
+      job.data.tokenId,
+      job.data.orderId,
+      job.data.orderType,
+      job.data.orderPrice,
+    );
+  }
+
   @Process('update-token-price')
   async updateTokenPrice(job: Job<{ orderId: number; orderPrice: number }>) {
     await this.queueService.updateTokenPrice(job.data.orderId, job.data.orderPrice);
