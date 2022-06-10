@@ -72,7 +72,7 @@ export class QueueService {
       .updateOne({ orderId }, { $set: { orderPrice } });
     if (result.modifiedCount === 0) {
       this.logger.warn(
-        `Token order ${orderId} is not in database, so put the related job into the queue again`,
+        `Token order ${orderId} is not in database, so put the [ update-order-price ] job into the queue again`,
       );
       await Sleep(1000);
       await this.tokenDataQueue.add('update-token-price', { orderId, orderPrice });

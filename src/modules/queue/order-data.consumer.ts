@@ -23,7 +23,7 @@ export class OrderDataConsumer {
       orderPrice: number;
     }>,
   ) {
-    this.logger.log(`Processing job ['update-order'] data: ${JSON.stringify(job.data)}`);
+    this.logger.log(`Processing job ['update-order-at-backend'] data: ${JSON.stringify(job.data)}`);
     await this.queueService.updateOrder(
       job.data.blockNumber,
       job.data.tokenId,
@@ -35,6 +35,7 @@ export class OrderDataConsumer {
 
   @Process('update-order-price')
   async updateOrderPrice(job: Job<{ orderId: number; orderPrice: number }>) {
+    this.logger.log(`Processing job ['update-order-price'] data: ${JSON.stringify(job.data)}`);
     await this.queueService.updateOrderPrice(job.data.orderId, job.data.orderPrice);
   }
 }
