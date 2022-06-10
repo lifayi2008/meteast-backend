@@ -31,7 +31,7 @@ export class QueueService {
         .updateOne({ tokenId, count: { $gt: 0 } }, { $inc: { count: -1 } });
       if (result.modifiedCount === 0) {
         this.logger.warn(
-          `Token ${tokenId} is not in database, so put the related job into the queue again`,
+          `Token ${tokenId} is not in database, so put the [ off-sale ] job into the queue`,
         );
         await Sleep(1000);
         await this.tokenDataQueue.add('token-on-off-sale', {
@@ -50,35 +50,7 @@ export class QueueService {
       .updateOne({ tokenId }, { $set: { blockNumber, createTime, category } }, { upsert: true });
   }
 
-  async updateToken(
-    blockNumber: number,
-    tokenId: string,
-    orderId: number,
-    orderType: OrderType,
-    orderPrice: number,
-  ) {
-    const result = await this.connection
-      .collection('tokens')
-      .updateOne(
-        { tokenId, blockNumber: { $gt: blockNumber } },
-        { $set: { orderId, orderType, orderPrice, blockNumber } },
-      );
-    if (result.matchedCount === 0) {
-      this.logger.warn(
-        `Token ${tokenId} is not in database, so put the related job into the queue again`,
-      );
-      await Sleep(5000);
-      await this.tokenDataQueue.add('update-token-again', {
-        blockNumber,
-        tokenId,
-        orderId,
-        orderType,
-        orderPrice,
-      });
-    }
-  }
-
-  async updateTokenAgain(
+  async updateOrder(
     blockNumber: number,
     tokenId: string,
     orderId: number,
@@ -86,14 +58,15 @@ export class QueueService {
     orderPrice: number,
   ) {
     await this.connection
-      .collection('tokens')
+      .collection('orders')
       .updateOne(
-        { tokenId, blockNumber: { $gt: blockNumber } },
-        { $set: { orderId, orderType, orderPrice, blockNumber } },
+        { orderId },
+        { $set: { blockNumber, tokenId, orderType, orderPrice } },
+        { upsert: true },
       );
   }
 
-  async updateTokenPrice(orderId: number, orderPrice: number) {
+  async updateOrderPrice(orderId: number, orderPrice: number) {
     const result = await this.connection
       .collection('tokens')
       .updateOne({ orderId }, { $set: { orderPrice } });

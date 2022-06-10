@@ -5,9 +5,12 @@ import { TokenDataConsumer } from './token-data.consumer';
 
 @Module({
   imports: [
-    BullModule.registerQueue({
-      name: 'token-data-queue',
-    }),
+    BullModule.registerQueue(
+      {
+        name: 'token-data-queue',
+      },
+      { name: 'order-data-queue' },
+    ),
   ],
   providers: [QueueService, TokenDataConsumer],
 })
