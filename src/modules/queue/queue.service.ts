@@ -44,10 +44,22 @@ export class QueueService {
     }
   }
 
-  async createToken(tokenId: string, blockNumber: number, createTime: number, category: string) {
+  async createToken(
+    tokenId: string,
+    blockNumber: number,
+    createTime: number,
+    category: string,
+    name: string,
+    description: string,
+    royaltyOwner: string,
+  ) {
     await this.connection
       .collection('tokens')
-      .updateOne({ tokenId }, { $set: { blockNumber, createTime, category } }, { upsert: true });
+      .updateOne(
+        { tokenId },
+        { $set: { blockNumber, createTime, category, name, description, royaltyOwner } },
+        { upsert: true },
+      );
   }
 
   async updateOrder(

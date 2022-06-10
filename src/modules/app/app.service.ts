@@ -1,10 +1,10 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { CommonResponse } from '../common/interfaces';
+import { CommonResponse, OrderType } from '../common/interfaces';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Constants } from '../common/constants';
-import { User } from './interfaces';
+import { OrderBy, User } from './interfaces';
 import { AuthService } from '../auth/auth.service';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
 import { UserProfileDTO } from './dto/UserProfileDTO';
@@ -79,7 +79,103 @@ export class AppService {
   }
 
   async listMarketTokens(dto: TokenQueryDTO) {
-    return undefined;
+    const pipeline = [];
+    const match1 = {};
+
+    if (dto.filterStatus) {
+      if (dto.filterStatus === 'BUY NOW') {
+        match1['orderType'] = OrderType.Sale;
+      } else if (dto.filterStatus === 'ON AUCTION') {
+        match1['orderType'] = OrderType.Auction;
+      }
+    }
+
+    if (dto.minPrice) {
+      match1['price'] = { $gte: dto.minPrice };
+    }
+
+    if (dto.maxPrice) {
+      match1['price'] = { $lte: dto.maxPrice };
+    }
+
+    if (Object.getOwnPropertyNames(match1).length > 0) {
+      pipeline.push({ $match: match1 });
+    }
+
+    pipeline.push([
+      { $sort: { blockNumber: -1 } },
+      { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+      { $replaceRoot: { newRoot: '$doc' } },
+      {
+        $lookup: {
+          from: 'token_on_order',
+          localField: 'tokenId',
+          foreignField: 'tokenId',
+          as: 'token_order',
+        },
+      },
+      { $unwind: '$token_order' },
+      { $match: { 'token_order.count': 1 } },
+      { $lookup: { from: 'tokens', localField: 'tokenId', foreignField: 'tokenId', as: 'token' } },
+      { $unwind: '$token' },
+    ]);
+
+    const match2 = {};
+
+    if (dto.keyword) {
+      match2['$or'] = [
+        { 'token.royaltyOwner': dto.keyword },
+        { 'token.name': { $regex: dto.keyword, $options: 'i' } },
+        { 'token.description': { $regex: dto.keyword, $options: 'i' } },
+      ];
+    }
+
+    if (dto.category) {
+      match2['token.category'] = dto.category;
+    }
+
+    if (Object.getOwnPropertyNames(match2).length > 0) {
+      pipeline.push({ $match: match2 });
+    }
+
+    const total = (
+      await this.connection
+        .collection('tokens')
+        .aggregate([...pipeline, { $count: 'total' }])
+        .toArray()
+    )[0].total;
+
+    const data = await this.connection
+      .collection('tokens')
+      .aggregate([
+        ...pipeline,
+        { $project: { _id: 0, tokenId: 1 } },
+        { $sort: AppService.composeOrderClause(dto.orderType) },
+        { $skip: (dto.pageNum - 1) * dto.pageSize },
+        { $limit: dto.pageSize },
+      ])
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
+  private static composeOrderClause(orderBy: OrderBy) {
+    switch (orderBy) {
+      case OrderBy.PriceHTL:
+        return { orderPrice: -1 };
+      case OrderBy.PriceLTH:
+        return { orderPrice: 1 };
+      case OrderBy.MOST_VIEWED:
+        return { 'token.views': -1 };
+      case OrderBy.MOST_LIKED:
+        return { 'token.likes': -1 };
+      case OrderBy.MOST_RECENT:
+        return { blockNumber: -1 };
+      case OrderBy.OLDEST:
+        return { blockNumber: 1 };
+      default:
+        return { blockNumber: -1 };
+    }
   }
 
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {

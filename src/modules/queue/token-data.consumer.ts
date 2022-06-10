@@ -25,7 +25,15 @@ export class TokenDataConsumer {
 
   @Process('token-create')
   async tokenCreate(
-    job: Job<{ tokenId: string; blockNumber: number; createTime: number; category: string }>,
+    job: Job<{
+      tokenId: string;
+      blockNumber: number;
+      createTime: number;
+      category: string;
+      name: string;
+      description: string;
+      royaltyOwner: string;
+    }>,
   ) {
     this.logger.log(`Processing job ['token-create'] data: ${JSON.stringify(job.data)}`);
     await this.queueService.createToken(
@@ -33,6 +41,9 @@ export class TokenDataConsumer {
       job.data.blockNumber,
       job.data.createTime,
       job.data.category,
+      job.data.name,
+      job.data.description,
+      job.data.royaltyOwner,
     );
   }
 }
