@@ -20,6 +20,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
 import { UserProfileDTO } from './dto/UserProfileDTO';
 import Web3 from 'web3';
+import { TokenQueryDTO } from './dto/TokenQueryDTO';
+import { QueryPageDTO } from '../common/QueryPageDTO';
 
 @Controller()
 export class AppController {
@@ -75,34 +77,27 @@ export class AppController {
     return await this.appService.listBanner(location);
   }
 
-  @Get('/getPopularityOfTokens')
-  async getPopularityOfTokens(
-    @Query('pageSize') pageSize: number,
-    @Query('pageNum') pageNum: number,
-  ): Promise<CommonResponse> {
-    if (pageSize <= 0 || pageSize > 50) {
-      pageSize = 20;
-    }
-    if (pageNum < 0) {
-      pageNum = 1;
-    }
-    return await this.appService.getPopularityOfTokens(pageNum, pageSize);
+  @Post('/getPopularityOfTokens')
+  async getPopularityOfTokens(@Body() dto: QueryPageDTO): Promise<CommonResponse> {
+    return await this.appService.getPopularityOfTokens(dto.pageNum, dto.pageSize);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('/getFavoritesCollectible')
+  @Post('/getFavoritesCollectible')
   async getFavoritesCollectible(
-    @Query('pageSize') pageSize: number,
-    @Query('pageNum') pageNum: number,
+    @Body() dto: QueryPageDTO,
     @Request() req,
   ): Promise<CommonResponse> {
-    if (pageSize <= 0 || pageSize > 50) {
-      pageSize = 20;
-    }
-    if (pageNum < 0) {
-      pageNum = 1;
-    }
-    return await this.appService.getFavoritesCollectible(pageNum, pageSize, req.user.address);
+    return await this.appService.getFavoritesCollectible(
+      dto.pageNum,
+      dto.pageSize,
+      req.user.address,
+    );
+  }
+
+  @Post('/listMarketTokens')
+  async listMarketTokens(@Body() dto: TokenQueryDTO): Promise<CommonResponse> {
+    return await this.appService.listMarketTokens(dto);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -8,6 +8,7 @@ import { User } from './interfaces';
 import { AuthService } from '../auth/auth.service';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
 import { UserProfileDTO } from './dto/UserProfileDTO';
+import { TokenQueryDTO } from './dto/TokenQueryDTO';
 
 @Injectable()
 export class AppService {
@@ -77,6 +78,10 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
+  async listMarketTokens(dto: TokenQueryDTO) {
+    return undefined;
+  }
+
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {
     const { address, tokenId } = viewOrLikeDTO;
 
@@ -85,9 +90,7 @@ export class AppService {
       .replaceOne({ tokenId, address }, { address, tokenId }, { upsert: true });
 
     if (result.upsertedCount === 1) {
-      await this.connection
-        .collection('token_views_likes')
-        .updateOne({ tokenId }, { $inc: { views: 1 } }, { upsert: true });
+      await this.connection.collection('tokens').updateOne({ tokenId }, { $inc: { views: 1 } });
     }
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
@@ -115,9 +118,7 @@ export class AppService {
       .replaceOne({ tokenId, address }, { address, tokenId }, { upsert: true });
 
     if (result.upsertedCount === 1) {
-      await this.connection
-        .collection('token_views_likes')
-        .updateOne({ tokenId }, { $inc: { likes: 1 } }, { upsert: true });
+      await this.connection.collection('tokens').updateOne({ tokenId }, { $inc: { likes: 1 } });
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
@@ -144,9 +145,7 @@ export class AppService {
     const result = await this.connection.collection('token_likes').deleteOne({ tokenId, address });
 
     if (result.deletedCount === 1) {
-      await this.connection
-        .collection('token_views_likes')
-        .updateOne({ tokenId }, { $inc: { likes: -1 } });
+      await this.connection.collection('tokens').updateOne({ tokenId }, { $inc: { likes: -1 } });
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
