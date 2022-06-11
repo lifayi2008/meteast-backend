@@ -102,23 +102,27 @@ export class AppService {
       pipeline.push({ $match: match1 });
     }
 
-    pipeline.push([
-      { $sort: { blockNumber: -1 } },
-      { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
-      { $replaceRoot: { newRoot: '$doc' } },
-      {
-        $lookup: {
-          from: 'token_on_order',
-          localField: 'tokenId',
-          foreignField: 'tokenId',
-          as: 'token_order',
+    pipeline.push(
+      ...[
+        { $sort: { blockNumber: -1 } },
+        { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+        { $replaceRoot: { newRoot: '$doc' } },
+        {
+          $lookup: {
+            from: 'token_on_order',
+            localField: 'tokenId',
+            foreignField: 'tokenId',
+            as: 'token_order',
+          },
         },
-      },
-      { $unwind: '$token_order' },
-      { $match: { 'token_order.count': 1 } },
-      { $lookup: { from: 'tokens', localField: 'tokenId', foreignField: 'tokenId', as: 'token' } },
-      { $unwind: '$token' },
-    ]);
+        { $unwind: '$token_order' },
+        { $match: { 'token_order.count': 1 } },
+        {
+          $lookup: { from: 'tokens', localField: 'tokenId', foreignField: 'tokenId', as: 'token' },
+        },
+        { $unwind: '$token' },
+      ],
+    );
 
     const match2 = {};
 
@@ -170,11 +174,11 @@ export class AppService {
       case OrderBy.MOST_LIKED:
         return { 'token.likes': -1 };
       case OrderBy.MOST_RECENT:
-        return { blockNumber: -1 };
+        return { createTime: -1 };
       case OrderBy.OLDEST:
-        return { blockNumber: 1 };
+        return { createTime: 1 };
       default:
-        return { blockNumber: -1 };
+        return { createTime: -1 };
     }
   }
 

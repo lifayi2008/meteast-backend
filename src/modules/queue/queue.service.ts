@@ -63,17 +63,17 @@ export class QueueService {
   }
 
   async updateOrder(
-    blockNumber: number,
     tokenId: string,
     orderId: number,
     orderType: OrderType,
     orderPrice: number,
+    createTime: number,
   ) {
     await this.connection
       .collection('orders')
       .updateOne(
         { orderId },
-        { $set: { blockNumber, tokenId, orderType, orderPrice } },
+        { $set: { tokenId, orderType, orderPrice, createTime } },
         { upsert: true },
       );
   }

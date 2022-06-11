@@ -16,20 +16,20 @@ export class OrderDataConsumer {
   @Process('update-order-at-backend')
   async updateOrder(
     job: Job<{
-      blockNumber: number;
       tokenId: string;
       orderId: number;
       orderType: OrderType;
       orderPrice: number;
+      createTime: number;
     }>,
   ) {
     this.logger.log(`Processing job ['update-order-at-backend'] data: ${JSON.stringify(job.data)}`);
     await this.queueService.updateOrder(
-      job.data.blockNumber,
       job.data.tokenId,
       job.data.orderId,
       job.data.orderType,
       job.data.orderPrice,
+      job.data.createTime,
     );
   }
 
