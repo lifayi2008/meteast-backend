@@ -104,7 +104,7 @@ export class AppService {
 
     pipeline.push(
       ...[
-        { $sort: { blockNumber: -1 } },
+        { $sort: { createTime: -1 } },
         { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
         { $replaceRoot: { newRoot: '$doc' } },
         {
@@ -144,16 +144,24 @@ export class AppService {
 
     const total = (
       await this.connection
-        .collection('tokens')
+        .collection('orders')
         .aggregate([...pipeline, { $count: 'total' }])
         .toArray()
     )[0].total;
 
     const data = await this.connection
-      .collection('tokens')
+      .collection('orders')
       .aggregate([
         ...pipeline,
-        { $project: { _id: 0, tokenId: 1 } },
+        {
+          $project: {
+            _id: 0,
+            token_order: 0,
+            'token._id': 0,
+            'token.tokenId': 0,
+            'token.blockNumber': 0,
+          },
+        },
         { $sort: AppService.composeOrderClause(dto.orderType) },
         { $skip: (dto.pageNum - 1) * dto.pageSize },
         { $limit: dto.pageSize },

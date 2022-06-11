@@ -33,6 +33,7 @@ export class TokenDataConsumer {
       name: string;
       description: string;
       royaltyOwner: string;
+      thumbnail: string;
     }>,
   ) {
     this.logger.log(`Processing job ['token-create'] data: ${JSON.stringify(job.data)}`);
@@ -44,6 +45,7 @@ export class TokenDataConsumer {
       job.data.name,
       job.data.description,
       job.data.royaltyOwner,
+      job.data.thumbnail,
     );
   }
 }

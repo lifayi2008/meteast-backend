@@ -52,12 +52,13 @@ export class QueueService {
     name: string,
     description: string,
     royaltyOwner: string,
+    thumbnail: string,
   ) {
     await this.connection
       .collection('tokens')
       .updateOne(
         { tokenId },
-        { $set: { blockNumber, createTime, category, name, description, royaltyOwner } },
+        { $set: { blockNumber, createTime, category, name, description, royaltyOwner, thumbnail } },
         { upsert: true },
       );
   }
