@@ -24,11 +24,15 @@ export class QueueService {
     if (to === this.contractMarket) {
       await this.connection
         .collection('token_on_order')
-        .updateOne({ tokenId, blockNumber }, { $inc: { count: 1 } }, { upsert: true });
+        .updateOne(
+          { tokenId, blockNumber },
+          { $inc: { count: 1 }, $set: { from } },
+          { upsert: true },
+        );
     } else if (from === this.contractMarket) {
       const result = await this.connection
         .collection('token_on_order')
-        .updateOne({ tokenId, count: { $gt: 0 } }, { $inc: { count: -1 } });
+        .updateOne({ tokenId, count: { $gt: 0 } }, { $inc: { count: -1 }, $set: { to } });
       if (result.modifiedCount === 0) {
         this.logger.warn(
           `Token ${tokenId} is not in database, so put the [ off-sale ] job into the queue`,
