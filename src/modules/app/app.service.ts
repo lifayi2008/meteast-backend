@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { CommonResponse, OrderType } from '../common/interfaces';
+import { CommonResponse, MyTokenType, OrderType } from '../common/interfaces';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
@@ -173,8 +173,30 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  async listOwnedTokensByAddress(dto: QueryByAddressDTO) {
+  async listMyTokens(dto: QueryByAddressDTO, type: MyTokenType) {
     const address = dto.address;
+
+    let match;
+    switch (type) {
+      case MyTokenType.Owned:
+        match = {
+          $or: [
+            { $and: [{ token_orders: { $size: 0 } }, { royaltyOwner: address }] },
+            { $and: [{ 'token_orders.count': 1 }, { 'token_orders.from': address }] },
+            { $and: [{ 'token_orders.count': 0 }, { 'token_orders.to': address }] },
+          ],
+        };
+        break;
+      case MyTokenType.Created:
+        match = { royaltyOwner: address };
+        break;
+      case MyTokenType.OnSale:
+        match = { 'token_orders.count': 1, 'token_orders.from': address };
+        break;
+      default:
+        throw new Error('Invalid type');
+    }
+
     const pipeline = [
       {
         $lookup: {
@@ -191,16 +213,7 @@ export class AppService {
         },
       },
       { $project: { _id: 0 } },
-      {
-        $match: {
-          $or: [
-            { $and: [{ token_orders: { $size: 0 } }, { royaltyOwner: address }] },
-            { $and: [{ 'token_orders.count': 1 }, { 'token_orders.from': address }] },
-            { $and: [{ 'token_orders.count': 0 }, { 'token_orders.to': address }] },
-          ],
-        },
-      },
-
+      { $match: match },
       {
         $lookup: {
           from: 'orders',

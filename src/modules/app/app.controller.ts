@@ -1,20 +1,19 @@
 import {
-  Request,
-  Controller,
-  Get,
-  Post,
-  Query,
-  UseGuards,
   BadRequestException,
   Body,
+  Controller,
+  Get,
   Logger,
+  Post,
+  Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { CommonResponse, UserType } from '../common/interfaces';
+import { CommonResponse, MyTokenType, User, UserType } from '../common/interfaces';
 import { DIDBackend, VerifiablePresentation } from '@elastosfoundation/did-js-sdk';
 import { MyDIDAdapter } from './did.adapter';
 import { Constants } from '../common/constants';
-import { User } from '../common/interfaces';
 import { LoginDTO } from './dto/LoginDTO';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
@@ -103,7 +102,17 @@ export class AppController {
 
   @Post('/listOwnedTokensByAddress')
   async listOwnedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listOwnedTokensByAddress(dto);
+    return await this.appService.listMyTokens(dto, MyTokenType.Owned);
+  }
+
+  @Post('/listCreatedTokensByAddress')
+  async listCreatedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
+    return await this.appService.listMyTokens(dto, MyTokenType.Created);
+  }
+
+  @Post('/listSaleTokensByAddress')
+  async listSaleTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
+    return await this.appService.listMyTokens(dto, MyTokenType.OnSale);
   }
 
   @UseGuards(JwtAuthGuard)

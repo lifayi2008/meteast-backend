@@ -33,3 +33,9 @@ export enum OrderType {
   Sale = 1,
   Auction,
 }
+
+export enum MyTokenType {
+  Owned = 1,
+  Created = 2,
+  OnSale = 3,
+}
