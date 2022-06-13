@@ -1,4 +1,4 @@
-import { OrderBy } from '../interfaces';
+import { OrderBy } from '../../common/interfaces';
 import { QueryPageDTO } from '../../common/QueryPageDTO';
 
 export class TokenQueryDTO extends QueryPageDTO {
