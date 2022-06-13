@@ -4,11 +4,13 @@ import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Constants } from '../common/constants';
-import { OrderBy, User } from './interfaces';
+import { User } from '../common/interfaces';
 import { AuthService } from '../auth/auth.service';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
 import { UserProfileDTO } from './dto/UserProfileDTO';
 import { TokenQueryDTO } from './dto/TokenQueryDTO';
+import { QueryByAddressDTO } from './dto/QueryByAddressDTO';
+import { SubService } from './sub.service';
 
 @Injectable()
 export class AppService {
@@ -162,7 +164,7 @@ export class AppService {
             'token.blockNumber': 0,
           },
         },
-        { $sort: AppService.composeOrderClause(dto.orderType) },
+        { $sort: SubService.composeOrderClauseForMarketToken(dto.orderType) },
         { $skip: (dto.pageNum - 1) * dto.pageSize },
         { $limit: dto.pageSize },
       ])
@@ -171,23 +173,68 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  private static composeOrderClause(orderBy: OrderBy) {
-    switch (orderBy) {
-      case OrderBy.PriceHTL:
-        return { orderPrice: -1 };
-      case OrderBy.PriceLTH:
-        return { orderPrice: 1 };
-      case OrderBy.MOST_VIEWED:
-        return { 'token.views': -1 };
-      case OrderBy.MOST_LIKED:
-        return { 'token.likes': -1 };
-      case OrderBy.MOST_RECENT:
-        return { createTime: -1 };
-      case OrderBy.OLDEST:
-        return { createTime: 1 };
-      default:
-        return { createTime: -1 };
-    }
+  async listOwnedTokensByAddress(dto: QueryByAddressDTO) {
+    const address = dto.address;
+    const pipeline = [
+      {
+        $lookup: {
+          from: 'token_on_order',
+          let: { tokenId: '$tokenId' },
+          pipeline: [
+            { $sort: { blockNumber: -1 } },
+            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+            { $replaceRoot: { newRoot: '$doc' } },
+            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+            { $project: { _id: 0, tokenId: 0 } },
+          ],
+          as: 'token_orders',
+        },
+      },
+      { $project: { _id: 0 } },
+      {
+        $match: {
+          $or: [
+            { $and: [{ token_orders: { $size: 0 } }, { royaltyOwner: address }] },
+            { $and: [{ 'token_orders.count': 1 }, { 'token_orders.from': address }] },
+            { $and: [{ 'token_orders.count': 0 }, { 'token_orders.to': address }] },
+          ],
+        },
+      },
+
+      {
+        $lookup: {
+          from: 'orders',
+          let: { tokenId: '$tokenId' },
+          pipeline: [
+            { $sort: { createTime: -1 } },
+            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+            { $replaceRoot: { newRoot: '$doc' } },
+            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+            { $project: { _id: 0, tokenId: 0 } },
+          ],
+          as: 'orders',
+        },
+      },
+    ];
+
+    const total = (
+      await this.connection
+        .collection('tokens')
+        .aggregate([...pipeline, { $count: 'total' }])
+        .toArray()
+    )[0].total;
+
+    const data = await this.connection
+      .collection('tokens')
+      .aggregate([
+        ...pipeline,
+        { $sort: SubService.composeOrderClauseForOwnedToken(dto.orderType) },
+        { $skip: (dto.pageNum - 1) * dto.pageSize },
+        { $limit: dto.pageSize },
+      ])
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {

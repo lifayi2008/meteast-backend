@@ -14,7 +14,7 @@ import { CommonResponse, UserType } from '../common/interfaces';
 import { DIDBackend, VerifiablePresentation } from '@elastosfoundation/did-js-sdk';
 import { MyDIDAdapter } from './did.adapter';
 import { Constants } from '../common/constants';
-import { User } from './interfaces';
+import { User } from '../common/interfaces';
 import { LoginDTO } from './dto/LoginDTO';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
@@ -22,6 +22,7 @@ import { UserProfileDTO } from './dto/UserProfileDTO';
 import Web3 from 'web3';
 import { TokenQueryDTO } from './dto/TokenQueryDTO';
 import { QueryPageDTO } from '../common/QueryPageDTO';
+import { QueryByAddressDTO } from './dto/QueryByAddressDTO';
 
 @Controller()
 export class AppController {
@@ -98,6 +99,11 @@ export class AppController {
   @Post('/listMarketTokens')
   async listMarketTokens(@Body() dto: TokenQueryDTO): Promise<CommonResponse> {
     return await this.appService.listMarketTokens(dto);
+  }
+
+  @Post('/listOwnedTokensByAddress')
+  async listOwnedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
+    return await this.appService.listOwnedTokensByAddress(dto);
   }
 
   @UseGuards(JwtAuthGuard)
