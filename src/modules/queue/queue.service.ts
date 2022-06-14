@@ -77,13 +77,21 @@ export class QueueService {
     orderPrice: number,
     createTime: number,
   ) {
-    await this.connection
-      .collection('orders')
-      .updateOne(
-        { orderId },
-        { $set: { tokenId, orderType, orderState, orderPrice, createTime, blockNumber } },
-        { upsert: true },
-      );
+    await this.connection.collection('orders').updateOne(
+      { orderId },
+      {
+        $set: {
+          tokenId,
+          orderType,
+          orderState,
+          orderPrice,
+          createTime,
+          blockNumberForPrice: blockNumber,
+          blockNumberForBuyer: blockNumber,
+        },
+      },
+      { upsert: true },
+    );
   }
 
   async updateOrderPrice(blockNumber: number, orderId: number, orderPrice: number) {
