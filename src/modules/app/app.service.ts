@@ -241,13 +241,17 @@ export class AppService {
       .collection('tokens')
       .aggregate([
         ...pipeline,
-        { $sort: SubService.composeOrderClauseForOwnedToken(dto.orderType) },
+        { $sort: SubService.composeOrderClauseForMyToken(dto.orderType) },
         { $skip: (dto.pageNum - 1) * dto.pageSize },
         { $limit: dto.pageSize },
       ])
       .toArray();
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
+  async listSoldTokensByAddress(dto: QueryByAddressDTO, OnSale: MyTokenType) {
+    return undefined;
   }
 
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {

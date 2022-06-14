@@ -39,3 +39,10 @@ export enum MyTokenType {
   Created = 2,
   OnSale = 3,
 }
+
+export enum OrderState {
+  Created = 1,
+  Filled,
+  Cancelled,
+  TakenDown,
+}

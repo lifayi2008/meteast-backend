@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { Sleep } from '../../utils/utils';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { OrderType } from '../common/interfaces';
+import { OrderState, OrderType } from '../common/interfaces';
 
 @Injectable()
 export class QueueService {
@@ -16,6 +16,7 @@ export class QueueService {
     private configService: ConfigService,
     @InjectConnection() private readonly connection: Connection,
     @InjectQueue('token-data-queue') private tokenDataQueue: Queue,
+    @InjectQueue('order-data-queue') private orderDataQueue: Queue,
   ) {
     this.contractMarket = this.configService.get('CONTRACT_MARKET');
   }
@@ -71,6 +72,7 @@ export class QueueService {
     tokenId: string,
     orderId: number,
     orderType: OrderType,
+    orderState: OrderState,
     orderPrice: number,
     createTime: number,
   ) {
@@ -83,16 +85,29 @@ export class QueueService {
       );
   }
 
-  async updateOrderPrice(orderId: number, orderPrice: number) {
+  async updateOrderPrice(orderId: number, orderPrice: number, orderState: OrderState) {
     const result = await this.connection
-      .collection('tokens')
-      .updateOne({ orderId }, { $set: { orderPrice } });
+      .collection('orders')
+      .updateOne({ orderId }, { $set: { orderPrice, orderState } });
     if (result.modifiedCount === 0) {
       this.logger.warn(
         `Token order ${orderId} is not in database, so put the [ update-order-price ] job into the queue again`,
       );
       await Sleep(1000);
-      await this.tokenDataQueue.add('update-token-price', { orderId, orderPrice });
+      await this.orderDataQueue.add('update-order-price', { orderId, orderPrice, orderState });
+    }
+  }
+
+  async updateOrderState(orderId: number, orderState: OrderState) {
+    const result = await this.connection
+      .collection('orders')
+      .updateOne({ orderId }, { $set: { orderState } });
+    if (result.modifiedCount === 0) {
+      this.logger.warn(
+        `Token order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
+      );
+      await Sleep(1000);
+      await this.orderDataQueue.add('update-order-state', { orderId, orderState });
     }
   }
 }

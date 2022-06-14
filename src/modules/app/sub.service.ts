@@ -20,7 +20,7 @@ export class SubService {
     }
   }
 
-  static composeOrderClauseForOwnedToken(orderBy: OrderBy) {
+  static composeOrderClauseForMyToken(orderBy: OrderBy) {
     switch (orderBy) {
       case OrderBy.PriceHTL:
         return { 'orders.orderPrice': -1 };
