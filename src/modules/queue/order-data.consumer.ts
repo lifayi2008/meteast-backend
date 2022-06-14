@@ -49,7 +49,7 @@ export class OrderDataConsumer {
 
   @Process('update-order-state')
   async updateOrderState(job: Job<{ orderId: number; orderState: OrderState }>) {
-    this.logger.log(`Processing job ['update-order-price'] data: ${JSON.stringify(job.data)}`);
+    this.logger.log(`Processing job ['update-order-state'] data: ${JSON.stringify(job.data)}`);
     await this.queueService.updateOrderState(job.data.orderId, job.data.orderState);
   }
 }

@@ -89,7 +89,7 @@ export class QueueService {
     const result = await this.connection
       .collection('orders')
       .updateOne({ orderId }, { $set: { orderPrice, orderState } });
-    if (result.modifiedCount === 0) {
+    if (result.matchedCount === 0) {
       this.logger.warn(
         `Token order ${orderId} is not in database, so put the [ update-order-price ] job into the queue again`,
       );
@@ -102,7 +102,7 @@ export class QueueService {
     const result = await this.connection
       .collection('orders')
       .updateOne({ orderId }, { $set: { orderState } });
-    if (result.modifiedCount === 0) {
+    if (result.matchedCount === 0) {
       this.logger.warn(
         `Token order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
       );
