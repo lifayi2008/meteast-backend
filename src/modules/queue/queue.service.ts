@@ -86,40 +86,21 @@ export class QueueService {
       );
   }
 
-  async updateOrderPrice(
-    blockNumber: number,
-    orderId: number,
-    orderPrice: number,
-    orderState: OrderState,
-  ) {
-    const result = await this.connection
+  async updateOrderPrice(blockNumber: number, orderId: number, orderPrice: number) {
+    await this.connection
       .collection('orders')
       .updateOne(
         { orderId, blockNumber: { $lt: blockNumber } },
-        { $set: { orderPrice, orderState } },
+        { $set: { orderPrice, blockNumber } },
       );
-    // if (result.matchedCount === 0) {
-    //   this.logger.warn(
-    //     `Token order ${orderId} is not in database, so put the [ update-order-price ] job into the queue again`,
-    //   );
-    //   await Sleep(1000);
-    //   await this.orderDataQueue.add('update-order-price', { orderId, orderPrice, orderState });
-    // }
   }
 
   async updateOrderState(blockNumber: number, orderId: number, orderState: OrderState) {
-    const result = await this.connection
+    await this.connection
       .collection('orders')
       .updateOne(
         { orderId, blockNumber: { $lt: blockNumber } },
         { $set: { orderState, blockNumber } },
       );
-    // if (result.matchedCount === 0) {
-    //   this.logger.warn(
-    //     `Token order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
-    //   );
-    //   await Sleep(1000);
-    //   await this.orderDataQueue.add('update-order-state', { orderId, orderState });
-    // }
   }
 }

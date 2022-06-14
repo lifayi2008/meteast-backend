@@ -46,7 +46,6 @@ export class OrderDataConsumer {
       job.data.blockNumber,
       job.data.orderId,
       job.data.orderPrice,
-      job.data.orderState,
     );
   }
 
