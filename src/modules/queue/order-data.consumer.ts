@@ -19,6 +19,7 @@ export class OrderDataConsumer {
       blockNumber: number;
       tokenId: string;
       orderId: number;
+      seller: string;
       orderType: OrderType;
       orderState: OrderState;
       orderPrice: number;
@@ -30,6 +31,7 @@ export class OrderDataConsumer {
       job.data.blockNumber,
       job.data.tokenId,
       job.data.orderId,
+      job.data.seller,
       job.data.orderType,
       job.data.orderState,
       job.data.orderPrice,

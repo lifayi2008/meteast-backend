@@ -72,6 +72,7 @@ export class QueueService {
     blockNumber: number,
     tokenId: string,
     orderId: number,
+    seller: string,
     orderType: OrderType,
     orderState: OrderState,
     orderPrice: number,
@@ -82,6 +83,7 @@ export class QueueService {
       {
         $set: {
           tokenId,
+          seller,
           orderType,
           orderState,
           orderPrice,
