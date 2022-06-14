@@ -60,4 +60,14 @@ export class OrderDataConsumer {
       job.data.orderState,
     );
   }
+
+  @Process('update-order-buyer')
+  async updateOrderBuyer(job: Job<{ blockNumber: number; orderId: number; buyer: string }>) {
+    this.logger.log(`Processing job ['update-order-buyer'] data: ${JSON.stringify(job.data)}`);
+    await this.queueService.updateOrderBuyer(
+      job.data.blockNumber,
+      job.data.orderId,
+      job.data.buyer,
+    );
+  }
 }

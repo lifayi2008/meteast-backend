@@ -96,11 +96,15 @@ export class QueueService {
   }
 
   async updateOrderState(blockNumber: number, orderId: number, orderState: OrderState) {
+    await this.connection.collection('orders').updateOne({ orderId }, { $set: { orderState } });
+  }
+
+  async updateOrderBuyer(blockNumber: number, orderId: number, buyer: string) {
     await this.connection
       .collection('orders')
       .updateOne(
-        { orderId, blockNumberForState: { $lt: blockNumber } },
-        { $set: { orderState, blockNumberForState: blockNumber } },
+        { orderId, blockNumberForBuyer: { $lt: blockNumber } },
+        { $set: { buyer, blockNumberForBuyer: blockNumber } },
       );
   }
 }
