@@ -69,6 +69,7 @@ export class QueueService {
   }
 
   async updateOrder(
+    blockNumber: number,
     tokenId: string,
     orderId: number,
     orderType: OrderType,
@@ -80,34 +81,45 @@ export class QueueService {
       .collection('orders')
       .updateOne(
         { orderId },
-        { $set: { tokenId, orderType, orderPrice, createTime } },
+        { $set: { tokenId, orderType, orderState, orderPrice, createTime, blockNumber } },
         { upsert: true },
       );
   }
 
-  async updateOrderPrice(orderId: number, orderPrice: number, orderState: OrderState) {
+  async updateOrderPrice(
+    blockNumber: number,
+    orderId: number,
+    orderPrice: number,
+    orderState: OrderState,
+  ) {
     const result = await this.connection
       .collection('orders')
-      .updateOne({ orderId }, { $set: { orderPrice, orderState } });
-    if (result.matchedCount === 0) {
-      this.logger.warn(
-        `Token order ${orderId} is not in database, so put the [ update-order-price ] job into the queue again`,
+      .updateOne(
+        { orderId, blockNumber: { $lt: blockNumber } },
+        { $set: { orderPrice, orderState } },
       );
-      await Sleep(1000);
-      await this.orderDataQueue.add('update-order-price', { orderId, orderPrice, orderState });
-    }
+    // if (result.matchedCount === 0) {
+    //   this.logger.warn(
+    //     `Token order ${orderId} is not in database, so put the [ update-order-price ] job into the queue again`,
+    //   );
+    //   await Sleep(1000);
+    //   await this.orderDataQueue.add('update-order-price', { orderId, orderPrice, orderState });
+    // }
   }
 
-  async updateOrderState(orderId: number, orderState: OrderState) {
+  async updateOrderState(blockNumber: number, orderId: number, orderState: OrderState) {
     const result = await this.connection
       .collection('orders')
-      .updateOne({ orderId }, { $set: { orderState } });
-    if (result.matchedCount === 0) {
-      this.logger.warn(
-        `Token order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
+      .updateOne(
+        { orderId, blockNumber: { $lt: blockNumber } },
+        { $set: { orderState, blockNumber } },
       );
-      await Sleep(1000);
-      await this.orderDataQueue.add('update-order-state', { orderId, orderState });
-    }
+    // if (result.matchedCount === 0) {
+    //   this.logger.warn(
+    //     `Token order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
+    //   );
+    //   await Sleep(1000);
+    //   await this.orderDataQueue.add('update-order-state', { orderId, orderState });
+    // }
   }
 }
