@@ -90,8 +90,8 @@ export class QueueService {
     await this.connection
       .collection('orders')
       .updateOne(
-        { orderId, blockNumber: { $lt: blockNumber } },
-        { $set: { orderPrice, blockNumber } },
+        { orderId, blockNumberForPrice: { $lt: blockNumber } },
+        { $set: { orderPrice, blockNumberForPrice: blockNumber } },
       );
   }
 
@@ -99,8 +99,8 @@ export class QueueService {
     await this.connection
       .collection('orders')
       .updateOne(
-        { orderId, blockNumber: { $lt: blockNumber } },
-        { $set: { orderState, blockNumber } },
+        { orderId, blockNumberForState: { $lt: blockNumber } },
+        { $set: { orderState, blockNumberForState: blockNumber } },
       );
   }
 }
