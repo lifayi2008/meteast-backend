@@ -152,7 +152,7 @@ export class AppService {
     const total = result.length > 0 ? result[0].total : 0;
     let data = [];
 
-    if(total > 0) {
+    if (total > 0) {
       data = await this.connection
         .collection('orders')
         .aggregate([
