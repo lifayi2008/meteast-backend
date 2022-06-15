@@ -448,6 +448,88 @@ export class AppService {
     };
   }
 
+  async getMyAllTokenNumber(address: string) {
+    const result = await this.connection
+      .collection('tokens')
+      .aggregate([
+        {
+          $lookup: {
+            from: 'orders',
+            let: { tokenId: '$tokenId' },
+            pipeline: [
+              { $sort: { createTime: -1 } },
+              { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+              { $replaceRoot: { newRoot: '$doc' } },
+              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+              { $project: { _id: 0, tokenId: 0 } },
+            ],
+            as: 'order',
+          },
+        },
+        { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
+        {
+          $match: {
+            $or: [
+              { royaltyOwner: address },
+              { 'order.orderState': OrderState.Created, 'order.seller': address },
+              { 'order.orderState': OrderState.Filled, 'order.buyer': address },
+              { 'order.orderState': OrderState.Cancelled, 'order.seller': address },
+              { 'order.orderState': OrderState.TakenDown, 'order.seller': address },
+            ],
+          },
+        },
+        { $count: 'total' },
+      ])
+      .toArray();
+
+    return {
+      status: HttpStatus.OK,
+      message: Constants.MSG_SUCCESS,
+      data: result.length > 0 ? result[0].total : 0,
+    };
+  }
+
+  async getMyOwnedTokenNumber(address: string) {
+    const result = await this.connection
+      .collection('tokens')
+      .aggregate([
+        {
+          $lookup: {
+            from: 'orders',
+            let: { tokenId: '$tokenId' },
+            pipeline: [
+              { $sort: { createTime: -1 } },
+              { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+              { $replaceRoot: { newRoot: '$doc' } },
+              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+              { $project: { _id: 0, tokenId: 0 } },
+            ],
+            as: 'order',
+          },
+        },
+        { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
+        {
+          $match: {
+            $or: [
+              { royaltyOwner: address, order: { $exists: false } },
+              { 'order.orderState': OrderState.Created, 'order.seller': address },
+              { 'order.orderState': OrderState.Filled, 'order.buyer': address },
+              { 'order.orderState': OrderState.Cancelled, 'order.seller': address },
+              { 'order.orderState': OrderState.TakenDown, 'order.seller': address },
+            ],
+          },
+        },
+        { $count: 'total' },
+      ])
+      .toArray();
+
+    return {
+      status: HttpStatus.OK,
+      message: Constants.MSG_SUCCESS,
+      data: result.length > 0 ? result[0].total : 0,
+    };
+  }
+
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {
     const { address, tokenId } = viewOrLikeDTO;
 

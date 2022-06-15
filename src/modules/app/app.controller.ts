@@ -123,6 +123,16 @@ export class AppController {
     return await this.appService.getMyTokenNumbers(address);
   }
 
+  @Get('/getMyAllTokenNumber')
+  async getMyAllTokenNumber(@Query('address') address: string): Promise<CommonResponse> {
+    return await this.appService.getMyAllTokenNumber(address);
+  }
+
+  @Get('/getMyOwnedTokenNumber')
+  async getMyOwnedTokenNumber(@Query('address') address: string): Promise<CommonResponse> {
+    return await this.appService.getMyOwnedTokenNumber(address);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('/listFavoritesTokens')
   async getFavoritesTokens(@Body() dto: QueryPageDTO, @Request() req): Promise<CommonResponse> {
