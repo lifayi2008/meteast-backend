@@ -84,15 +84,8 @@ export class AppController {
 
   @UseGuards(JwtAuthGuard)
   @Post('/getFavoritesCollectible')
-  async getFavoritesCollectible(
-    @Body() dto: QueryPageDTO,
-    @Request() req,
-  ): Promise<CommonResponse> {
-    return await this.appService.getFavoritesCollectible(
-      dto.pageNum,
-      dto.pageSize,
-      req.user.address,
-    );
+  async getFavoritesCollectible(@Request() req): Promise<CommonResponse> {
+    return await this.appService.getFavoritesCollectible(req.user.address);
   }
 
   @Post('/listMarketTokens')
@@ -118,6 +111,12 @@ export class AppController {
   @Post('/listSoldTokensByAddress')
   async listSoldTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
     return await this.appService.listSellTokensByAddress(dto, MyTokenType.Sold);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/getFavoritesTokens')
+  async getFavoritesTokens(@Body() dto: QueryPageDTO, @Request() req): Promise<CommonResponse> {
+    return await this.appService.getFavoritesTokens(dto, req.user.address);
   }
 
   @UseGuards(JwtAuthGuard)

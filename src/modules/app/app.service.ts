@@ -11,6 +11,7 @@ import { UserProfileDTO } from './dto/UserProfileDTO';
 import { TokenQueryDTO } from './dto/TokenQueryDTO';
 import { QueryByAddressDTO } from './dto/QueryByAddressDTO';
 import { SubService } from './sub.service';
+import { QueryPageDTO } from '../common/QueryPageDTO';
 
 @Injectable()
 export class AppService {
@@ -67,17 +68,14 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  async getFavoritesCollectible(pageNum: number, pageSize: number, address) {
-    const total = this.connection.collection('token_likes').find({ address }).bufferedCount();
+  async getFavoritesCollectible(address: string) {
     const data = await this.connection
       .collection('token_likes')
       .find({ address })
       .project({ _id: 0, tokenId: 1 })
-      .skip((pageNum - 1) * pageSize)
-      .limit(pageSize)
       .toArray();
 
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 
   async listMarketTokens(dto: TokenQueryDTO) {
@@ -320,6 +318,59 @@ export class AppService {
         .aggregate([
           ...pipeline,
           { $sort: SubService.composeOrderClauseForMySoldToken(dto.orderType) },
+          { $skip: (dto.pageNum - 1) * dto.pageSize },
+          { $limit: dto.pageSize },
+        ])
+        .toArray();
+    }
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
+  async getFavoritesTokens(dto: QueryPageDTO, address: string) {
+    const pipeline = [
+      { $match: { address } },
+      {
+        $lookup: {
+          from: 'orders',
+          let: { tokenId: '$tokenId' },
+          pipeline: [
+            { $sort: { createTime: -1 } },
+            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+            { $replaceRoot: { newRoot: '$doc' } },
+            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+            { $project: { _id: 0, tokenId: 0 } },
+          ],
+          as: 'order',
+        },
+      },
+      { $unwind: '$order' },
+      {
+        $lookup: {
+          from: 'tokens',
+          localField: 'tokenId',
+          foreignField: 'tokenId',
+          as: 'token',
+        },
+      },
+      { $unwind: '$token' },
+      { $project: { _id: 0, 'token._id': 0, 'token.tokenId': 0, 'token.blockNumber': 0 } },
+    ];
+
+    const result = await this.connection
+      .collection('token_likes')
+      .aggregate([...pipeline, { $count: 'total' }])
+      .toArray();
+
+    const total = result.length > 0 ? result[0].total : 0;
+    let data = [];
+
+    if (total > 0) {
+      data = await this.connection
+        .collection('token_likes')
+        .aggregate([
+          ...pipeline,
+          { $sort: { 'order.createTime': -1 } },
           { $skip: (dto.pageNum - 1) * dto.pageSize },
           { $limit: dto.pageSize },
         ])
