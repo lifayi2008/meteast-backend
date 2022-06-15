@@ -114,7 +114,7 @@ export class QueueService {
         `Order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
       );
       await Sleep(1000);
-      await this.orderDataQueue.add('order-update-state', {
+      await this.orderDataQueue.add('update-order-state', {
         blockNumber,
         orderId,
         orderState,
