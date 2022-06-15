@@ -106,7 +106,20 @@ export class QueueService {
   }
 
   async updateOrderState(blockNumber: number, orderId: number, orderState: OrderState) {
-    await this.connection.collection('orders').updateOne({ orderId }, { $set: { orderState } });
+    const result = await this.connection
+      .collection('orders')
+      .updateOne({ orderId }, { $set: { orderState } });
+    if (result.modifiedCount === 0) {
+      this.logger.warn(
+        `Order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
+      );
+      await Sleep(1000);
+      await this.orderDataQueue.add('order-update-state', {
+        blockNumber,
+        orderId,
+        orderState,
+      });
+    }
   }
 
   async updateOrderBuyer(blockNumber: number, orderId: number, buyer: string) {
