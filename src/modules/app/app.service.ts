@@ -173,29 +173,8 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  async listMyTokens(dto: QueryByAddressDTO, type: MyTokenType) {
+  async listOwnedTokensByAddress(dto: QueryByAddressDTO) {
     const address = dto.address;
-
-    let match;
-    switch (type) {
-      case MyTokenType.Owned:
-        match = {
-          $or: [
-            { $and: [{ token_orders: { $size: 0 } }, { royaltyOwner: address }] },
-            { $and: [{ 'token_orders.count': 1 }, { 'token_orders.from': address }] },
-            { $and: [{ 'token_orders.count': 0 }, { 'token_orders.to': address }] },
-          ],
-        };
-        break;
-      case MyTokenType.Created:
-        match = { royaltyOwner: address };
-        break;
-      case MyTokenType.OnSale:
-        match = { 'token_orders.count': 1, 'token_orders.from': address };
-        break;
-      default:
-        throw new Error('Invalid type');
-    }
 
     const pipeline = [
       {
@@ -213,7 +192,15 @@ export class AppService {
         },
       },
       { $project: { _id: 0 } },
-      { $match: match },
+      {
+        $match: {
+          $or: [
+            { $and: [{ token_orders: { $size: 0 } }, { royaltyOwner: address }] },
+            { $and: [{ 'token_orders.count': 1 }, { 'token_orders.from': address }] },
+            { $and: [{ 'token_orders.count': 0 }, { 'token_orders.to': address }] },
+          ],
+        },
+      },
       {
         $lookup: {
           from: 'orders',
@@ -230,30 +217,80 @@ export class AppService {
       },
     ];
 
-    const total = (
-      await this.connection
-        .collection('tokens')
-        .aggregate([...pipeline, { $count: 'total' }])
-        .toArray()
-    )[0].total;
-
-    const data = await this.connection
+    const result = await this.connection
       .collection('tokens')
-      .aggregate([
-        ...pipeline,
-        { $sort: SubService.composeOrderClauseForMyToken(dto.orderType) },
-        { $skip: (dto.pageNum - 1) * dto.pageSize },
-        { $limit: dto.pageSize },
-      ])
+      .aggregate([...pipeline, { $count: 'total' }])
       .toArray();
+
+    const total = result ? result[0].total : 0;
+    let data = [];
+
+    if (total > 0) {
+      data = await this.connection
+        .collection('tokens')
+        .aggregate([
+          ...pipeline,
+          { $sort: SubService.composeOrderClauseForMyToken(dto.orderType) },
+          { $skip: (dto.pageNum - 1) * dto.pageSize },
+          { $limit: dto.pageSize },
+        ])
+        .toArray();
+    }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  async listSoldTokensByAddress(dto: QueryByAddressDTO) {
+  async listCreatedTokensByAddress(dto: QueryByAddressDTO) {
+    const royaltyOwner = dto.address;
+
+    const pipeline = [
+      { $match: { royaltyOwner } },
+      {
+        $lookup: {
+          from: 'orders',
+          let: { tokenId: '$tokenId' },
+          pipeline: [
+            { $sort: { createTime: -1 } },
+            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+            { $replaceRoot: { newRoot: '$doc' } },
+            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+            { $project: { _id: 0, tokenId: 0 } },
+          ],
+          as: 'order',
+        },
+      },
+      { $project: { _id: 0 } },
+    ];
+
+    const result = await this.connection
+      .collection('tokens')
+      .aggregate([...pipeline, { $count: 'total' }])
+      .toArray();
+
+    const total = result ? result[0].total : 0;
+    let data = [];
+
+    if (total > 0) {
+      data = await this.connection
+        .collection('tokens')
+        .aggregate([
+          ...pipeline,
+          { $sort: SubService.composeOrderClauseForMySoldToken(dto.orderType) },
+          { $skip: (dto.pageNum - 1) * dto.pageSize },
+          { $limit: dto.pageSize },
+        ])
+        .toArray();
+    }
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
+  async listSellTokensByAddress(dto: QueryByAddressDTO, type: MyTokenType) {
+    const orderState = type === MyTokenType.OnSale ? 1 : 2;
+
     const pipeline = [
       {
-        $match: { orderState: 2, seller: dto.address },
+        $match: { orderState, seller: dto.address },
       },
       {
         $lookup: {
@@ -266,22 +303,25 @@ export class AppService {
       { $project: { _id: 0, 'token._id': 0 } },
     ];
 
-    const total = (
-      await this.connection
-        .collection('orders')
-        .aggregate([...pipeline, { $count: 'total' }])
-        .toArray()
-    )[0].total;
-
-    const data = await this.connection
+    const result = await this.connection
       .collection('orders')
-      .aggregate([
-        ...pipeline,
-        { $sort: SubService.composeOrderClauseForMySoldToken(dto.orderType) },
-        { $skip: (dto.pageNum - 1) * dto.pageSize },
-        { $limit: dto.pageSize },
-      ])
+      .aggregate([...pipeline, { $count: 'total' }])
       .toArray();
+
+    const total = result ? result[0].total : 0;
+    let data = [];
+
+    if (total > 0) {
+      data = await this.connection
+        .collection('orders')
+        .aggregate([
+          ...pipeline,
+          { $sort: SubService.composeOrderClauseForMySoldToken(dto.orderType) },
+          { $skip: (dto.pageNum - 1) * dto.pageSize },
+          { $limit: dto.pageSize },
+        ])
+        .toArray();
+    }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }

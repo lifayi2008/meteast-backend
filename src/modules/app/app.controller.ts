@@ -102,22 +102,22 @@ export class AppController {
 
   @Post('/listOwnedTokensByAddress')
   async listOwnedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listMyTokens(dto, MyTokenType.Owned);
+    return await this.appService.listOwnedTokensByAddress(dto);
   }
 
   @Post('/listCreatedTokensByAddress')
   async listCreatedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listMyTokens(dto, MyTokenType.Created);
+    return await this.appService.listCreatedTokensByAddress(dto);
   }
 
   @Post('/listSaleTokensByAddress')
   async listSaleTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listMyTokens(dto, MyTokenType.OnSale);
+    return await this.appService.listSellTokensByAddress(dto, MyTokenType.OnSale);
   }
 
   @Post('/listSoldTokensByAddress')
   async listSoldTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listSoldTokensByAddress(dto);
+    return await this.appService.listSellTokensByAddress(dto, MyTokenType.Sold);
   }
 
   @UseGuards(JwtAuthGuard)

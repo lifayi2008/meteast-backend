@@ -38,6 +38,7 @@ export enum MyTokenType {
   Owned = 1,
   Created = 2,
   OnSale = 3,
+  Sold = 4,
 }
 
 export enum OrderState {
