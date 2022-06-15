@@ -432,19 +432,14 @@ export class AppService {
   }
 
   async getMyTokenNumbers(address: string) {
-    const liked = this.connection.collection('token_likes').find({ address }).bufferedCount();
-    const sold = this.connection
+    const liked = await this.connection.collection('token_likes').count({ address });
+    const sold = await this.connection
       .collection('orders')
-      .find({ orderState: OrderState.Filled, seller: address })
-      .bufferedCount();
-    const forSale = this.connection
+      .count({ orderState: OrderState.Filled, seller: address });
+    const forSale = await this.connection
       .collection('orders')
-      .find({ orderState: OrderState.Created, seller: address })
-      .bufferedCount();
-    const created = this.connection
-      .collection('tokens')
-      .find({ royaltyOwner: address })
-      .bufferedCount();
+      .count({ orderState: OrderState.Created, seller: address });
+    const created = await this.connection.collection('tokens').count({ royaltyOwner: address });
 
     return {
       status: HttpStatus.OK,
