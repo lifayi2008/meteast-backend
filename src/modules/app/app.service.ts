@@ -1,10 +1,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { CommonResponse, MyTokenType, OrderType } from '../common/interfaces';
+import { CommonResponse, OrderState, OrderType, User } from '../common/interfaces';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Constants } from '../common/constants';
-import { User } from '../common/interfaces';
 import { AuthService } from '../auth/auth.service';
 import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
 import { UserProfileDTO } from './dto/UserProfileDTO';
@@ -195,13 +194,14 @@ export class AppService {
         $match: {
           $or: [
             { royaltyOwner: dto.address },
-            { 'order.orderState': 1, 'order.seller': dto.address },
-            { 'order.orderState': 2, 'order.buyer': dto.address },
-            { 'order.orderState': 3, 'order.seller': dto.address },
-            { 'order.orderState': 4, 'order.seller': dto.address },
+            { 'order.orderState': OrderState.Created, 'order.seller': dto.address },
+            { 'order.orderState': OrderState.Filled, 'order.buyer': dto.address },
+            { 'order.orderState': OrderState.Cancelled, 'order.seller': dto.address },
+            { 'order.orderState': OrderState.TakenDown, 'order.seller': dto.address },
           ],
         },
       },
+      { $project: { _id: 0, blockNumber: 0 } },
     ];
 
     const result = await this.connection
@@ -339,9 +339,7 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  async listSellTokensByAddress(dto: QueryByAddressDTO, type: MyTokenType) {
-    const orderState = type === MyTokenType.OnSale ? 1 : 2;
-
+  async listSellTokensByAddress(dto: QueryByAddressDTO, orderState: OrderState) {
     const pipeline = [
       {
         $match: { orderState, seller: dto.address },
@@ -380,7 +378,7 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  async getFavoritesTokens(dto: QueryPageDTO, address: string) {
+  async listFavoritesTokens(dto: QueryPageDTO, address: string) {
     const pipeline = [
       { $match: { address } },
       {
@@ -431,6 +429,28 @@ export class AppService {
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
+  async getMyTokenNumbers(address: string) {
+    const liked = this.connection.collection('token_likes').find({ address }).bufferedCount();
+    const sold = this.connection
+      .collection('orders')
+      .find({ orderState: OrderState.Filled, seller: address })
+      .bufferedCount();
+    const forSale = this.connection
+      .collection('orders')
+      .find({ orderState: OrderState.Created, seller: address })
+      .bufferedCount();
+    const created = this.connection
+      .collection('tokens')
+      .find({ royaltyOwner: address })
+      .bufferedCount();
+
+    return {
+      status: HttpStatus.OK,
+      message: Constants.MSG_SUCCESS,
+      data: { liked, sold, forSale, created },
+    };
   }
 
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {

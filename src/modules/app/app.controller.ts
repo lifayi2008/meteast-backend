@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { CommonResponse, MyTokenType, User, UserType } from '../common/interfaces';
+import { CommonResponse, OrderState, User, UserType } from '../common/interfaces';
 import { DIDBackend, VerifiablePresentation } from '@elastosfoundation/did-js-sdk';
 import { MyDIDAdapter } from './did.adapter';
 import { Constants } from '../common/constants';
@@ -110,18 +110,23 @@ export class AppController {
 
   @Post('/listSaleTokensByAddress')
   async listSaleTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listSellTokensByAddress(dto, MyTokenType.OnSale);
+    return await this.appService.listSellTokensByAddress(dto, OrderState.Created);
   }
 
   @Post('/listSoldTokensByAddress')
   async listSoldTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listSellTokensByAddress(dto, MyTokenType.Sold);
+    return await this.appService.listSellTokensByAddress(dto, OrderState.Filled);
+  }
+
+  @Get('/getMyTokenNumbers')
+  async getMyTokenNumbers(@Query('address') address: string): Promise<CommonResponse> {
+    return await this.appService.getMyTokenNumbers(address);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('/getFavoritesTokens')
+  @Post('/listFavoritesTokens')
   async getFavoritesTokens(@Body() dto: QueryPageDTO, @Request() req): Promise<CommonResponse> {
-    return await this.appService.getFavoritesTokens(dto, req.user.address);
+    return await this.appService.listFavoritesTokens(dto, req.user.address);
   }
 
   @UseGuards(JwtAuthGuard)
