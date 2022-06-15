@@ -174,6 +174,59 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
+  async listAllMyTokens(dto: QueryByAddressDTO) {
+    const pipeline = [
+      {
+        $lookup: {
+          from: 'orders',
+          let: { tokenId: '$tokenId' },
+          pipeline: [
+            { $sort: { createTime: -1 } },
+            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+            { $replaceRoot: { newRoot: '$doc' } },
+            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+            { $project: { _id: 0, tokenId: 0 } },
+          ],
+          as: 'order',
+        },
+      },
+      { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
+      {
+        $match: {
+          $or: [
+            { royaltyOwner: dto.address },
+            { 'order.orderState': 1, 'order.seller': dto.address },
+            { 'order.orderState': 2, 'order.buyer': dto.address },
+            { 'order.orderState': 3, 'order.seller': dto.address },
+            { 'order.orderState': 4, 'order.seller': dto.address },
+          ],
+        },
+      },
+    ];
+
+    const result = await this.connection
+      .collection('tokens')
+      .aggregate([...pipeline, { $count: 'total' }])
+      .toArray();
+
+    const total = result.length > 0 ? result[0].total : 0;
+    let data = [];
+
+    if (total > 0) {
+      data = await this.connection
+        .collection('tokens')
+        .aggregate([
+          ...pipeline,
+          { $sort: SubService.composeOrderClauseForMyToken(dto.orderType) },
+          { $skip: (dto.pageNum - 1) * dto.pageSize },
+          { $limit: dto.pageSize },
+        ])
+        .toArray();
+    }
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
   async listOwnedTokensByAddress(dto: QueryByAddressDTO) {
     const address = dto.address;
 

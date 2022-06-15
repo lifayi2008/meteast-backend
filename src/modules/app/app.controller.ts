@@ -93,6 +93,11 @@ export class AppController {
     return await this.appService.listMarketTokens(dto);
   }
 
+  @Post('/listAllMyTokens')
+  async listAllMyTokens(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
+    return await this.appService.listAllMyTokens(dto);
+  }
+
   @Post('/listOwnedTokensByAddress')
   async listOwnedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
     return await this.appService.listOwnedTokensByAddress(dto);
