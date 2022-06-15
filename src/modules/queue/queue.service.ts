@@ -109,7 +109,7 @@ export class QueueService {
     const result = await this.connection
       .collection('orders')
       .updateOne({ orderId }, { $set: { orderState } });
-    if (result.modifiedCount === 0) {
+    if (result.matchedCount === 0) {
       this.logger.warn(
         `Order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
       );

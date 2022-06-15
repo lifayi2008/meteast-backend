@@ -250,8 +250,40 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  async listSoldTokensByAddress(dto: QueryByAddressDTO, OnSale: MyTokenType) {
-    return undefined;
+  async listSoldTokensByAddress(dto: QueryByAddressDTO) {
+    const pipeline = [
+      {
+        $match: { orderState: 2, seller: dto.address },
+      },
+      {
+        $lookup: {
+          from: 'tokens',
+          localField: 'tokenId',
+          foreignField: 'tokenId',
+          as: 'token',
+        },
+      },
+      { $project: { _id: 0, 'token._id': 0 } },
+    ];
+
+    const total = (
+      await this.connection
+        .collection('orders')
+        .aggregate([...pipeline, { $count: 'total' }])
+        .toArray()
+    )[0].total;
+
+    const data = await this.connection
+      .collection('orders')
+      .aggregate([
+        ...pipeline,
+        { $sort: SubService.composeOrderClauseForMySoldToken(dto.orderType) },
+        { $skip: (dto.pageNum - 1) * dto.pageSize },
+        { $limit: dto.pageSize },
+      ])
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
   async incTokenViews(viewOrLikeDTO: ViewOrLikeDTO) {

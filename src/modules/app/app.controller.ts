@@ -117,7 +117,7 @@ export class AppController {
 
   @Post('/listSoldTokensByAddress')
   async listSoldTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listSoldTokensByAddress(dto, MyTokenType.OnSale);
+    return await this.appService.listSoldTokensByAddress(dto);
   }
 
   @UseGuards(JwtAuthGuard)
