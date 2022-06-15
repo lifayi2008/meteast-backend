@@ -144,31 +144,34 @@ export class AppService {
       pipeline.push({ $match: match2 });
     }
 
-    const total = (
-      await this.connection
-        .collection('orders')
-        .aggregate([...pipeline, { $count: 'total' }])
-        .toArray()
-    )[0].total;
-
-    const data = await this.connection
+    const result = await this.connection
       .collection('orders')
-      .aggregate([
-        ...pipeline,
-        {
-          $project: {
-            _id: 0,
-            token_order: 0,
-            'token._id': 0,
-            'token.tokenId': 0,
-            'token.blockNumber': 0,
-          },
-        },
-        { $sort: SubService.composeOrderClauseForMarketToken(dto.orderType) },
-        { $skip: (dto.pageNum - 1) * dto.pageSize },
-        { $limit: dto.pageSize },
-      ])
+      .aggregate([...pipeline, { $count: 'total' }])
       .toArray();
+
+    const total = result.length > 0 ? result[0].total : 0;
+    let data = [];
+
+    if(total > 0) {
+      data = await this.connection
+        .collection('orders')
+        .aggregate([
+          ...pipeline,
+          {
+            $project: {
+              _id: 0,
+              token_order: 0,
+              'token._id': 0,
+              'token.tokenId': 0,
+              'token.blockNumber': 0,
+            },
+          },
+          { $sort: SubService.composeOrderClauseForMarketToken(dto.orderType) },
+          { $skip: (dto.pageNum - 1) * dto.pageSize },
+          { $limit: dto.pageSize },
+        ])
+        .toArray();
+    }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
@@ -222,7 +225,7 @@ export class AppService {
       .aggregate([...pipeline, { $count: 'total' }])
       .toArray();
 
-    const total = result ? result[0].total : 0;
+    const total = result.length > 0 ? result[0].total : 0;
     let data = [];
 
     if (total > 0) {
@@ -267,7 +270,7 @@ export class AppService {
       .aggregate([...pipeline, { $count: 'total' }])
       .toArray();
 
-    const total = result ? result[0].total : 0;
+    const total = result.length > 0 ? result[0].total : 0;
     let data = [];
 
     if (total > 0) {
@@ -308,7 +311,7 @@ export class AppService {
       .aggregate([...pipeline, { $count: 'total' }])
       .toArray();
 
-    const total = result ? result[0].total : 0;
+    const total = result.length > 0 ? result[0].total : 0;
     let data = [];
 
     if (total > 0) {
