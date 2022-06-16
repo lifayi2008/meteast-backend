@@ -178,11 +178,22 @@ export class QueueService {
   }
 
   async updateOrderBuyer(blockNumber: number, orderId: number, buyer: string) {
-    await this.connection
+    const result = await this.connection
       .collection('orders')
       .updateOne(
         { orderId, blockNumberForBuyer: { $lt: blockNumber } },
         { $set: { buyer, blockNumberForBuyer: blockNumber } },
       );
+    if (result.modifiedCount === 1) {
+      const order = await this.connection.collection('orders').findOne({ orderId });
+      await this.connection.collection('notifications').updateOne(
+        {
+          orderId,
+          address: order.seller,
+          type: NotificationType.Token_Sold,
+        },
+        { $set: { 'params.buyer': order.buyer } },
+      );
+    }
   }
 }
