@@ -43,5 +43,5 @@ export enum OrderState {
 
 export enum NotificationType {
   Token_Sold = 1,
-  Royalties_Received,
+  RoyaltyFee_Received,
 }

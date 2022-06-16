@@ -149,7 +149,7 @@ export class QueueService {
             address: order.seller,
             type: NotificationType.Token_Sold,
             date,
-            params: { tokenName: token.name, price: order.price, buyer: order.buyer },
+            params: { tokenName: token.name, price: order.orderPrice, buyer: order.buyer },
           },
         },
         { upsert: true },
@@ -158,15 +158,18 @@ export class QueueService {
         {
           orderId,
           address: order.seller,
-          type: NotificationType.Token_Sold,
+          type: NotificationType.RoyaltyFee_Received,
         },
         {
           $set: {
             orderId,
             address: token.royaltyOwner,
-            type: NotificationType.Royalties_Received,
+            type: NotificationType.RoyaltyFee_Received,
             date,
-            params: { tokenName: token.name, price: order.price },
+            params: {
+              tokenName: token.name,
+              royaltyFee: (token.royaltyFee / 100 / 10000) * order.orderPrice,
+            },
           },
         },
         { upsert: true },

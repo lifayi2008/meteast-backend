@@ -49,8 +49,7 @@ export class AppService {
   async getNotifications(address) {
     const data = await this.connection
       .collection('notifications')
-      .find({ address })
-      .project({ _id: { $toString: '$_id' } })
+      .aggregate([{ $match: { address } }, { $project: { _id: { $toString: '$_id' } } }])
       .toArray();
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
