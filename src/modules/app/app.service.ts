@@ -50,7 +50,15 @@ export class AppService {
     const data = await this.connection
       .collection('notifications')
       .find({ address })
-      .project({ id: { $toString: '$_id' } })
+      .project({
+        _id: { $toString: '$_id' },
+        address: 1,
+        orderId: 1,
+        type: 1,
+        date: 1,
+        params: 1,
+        read: 1,
+      })
       .toArray();
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
