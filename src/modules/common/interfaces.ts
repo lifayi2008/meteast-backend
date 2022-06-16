@@ -40,3 +40,8 @@ export enum OrderState {
   Cancelled,
   TakenDown,
 }
+
+export enum NotificationType {
+  Token_Sold = 1,
+  Royalties_Received,
+}

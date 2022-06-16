@@ -72,6 +72,44 @@ export class AppController {
     return await this.appService.login(user);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('/updateUserProfile')
+  async updateUserProfile(@Body() dto: UserProfileDTO, @Request() req): Promise<CommonResponse> {
+    const address = new Web3().eth.accounts.recover(
+      `Update profile with ${dto.did}`,
+      dto.signature,
+    );
+    if (address !== req.user.address) {
+      throw new BadRequestException('Invalid Request Params');
+    }
+
+    return await this.appService.updateUserProfile(dto, req.user.address);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/getUserProfile')
+  async getUserProfile(@Request() req): Promise<CommonResponse> {
+    return await this.appService.getUserProfile(req.user.address);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/getNotifications')
+  async getNotifications(@Request() req): Promise<CommonResponse> {
+    return await this.appService.getNotifications(req.user.address);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/readNotifications')
+  async readNotifications(@Request() req): Promise<CommonResponse> {
+    return await this.appService.readNotifications(req.user.address);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/removeNotification')
+  async removeNotification(@Query('id') id: string, @Request() req): Promise<CommonResponse> {
+    return await this.appService.removeNotification(id, req.user.address);
+  }
+
   @Get('/listBanner')
   async listBanner(@Query('location') location: string): Promise<CommonResponse> {
     return await this.appService.listBanner(location);
@@ -179,25 +217,5 @@ export class AppController {
   async decBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
     return await this.appService.decBlindBoxLikes(dto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('/updateUserProfile')
-  async updateUserProfile(@Body() dto: UserProfileDTO, @Request() req): Promise<CommonResponse> {
-    const address = new Web3().eth.accounts.recover(
-      `Update profile with ${dto.did}`,
-      dto.signature,
-    );
-    if (address !== req.user.address) {
-      throw new BadRequestException('Invalid Request Params');
-    }
-
-    return await this.appService.updateUserProfile(dto, req.user.address);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('/getUserProfile')
-  async getUserProfile(@Request() req): Promise<CommonResponse> {
-    return await this.appService.getUserProfile(req.user.address);
   }
 }

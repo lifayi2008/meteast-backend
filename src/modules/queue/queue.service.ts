@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { Sleep } from '../../utils/utils';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { OrderState, OrderType } from '../common/interfaces';
+import { NotificationType, OrderState, OrderType } from '../common/interfaces';
 
 @Injectable()
 export class QueueService {
@@ -119,6 +119,48 @@ export class QueueService {
         orderId,
         orderState,
       });
+    }
+
+    //send notifications to seller and royalty owner
+    if (orderState === OrderState.Filled && result.modifiedCount === 1) {
+      await Sleep(10000);
+      const date = Date.now();
+      const order = await this.connection.collection('orders').findOne({ orderId });
+      const token = await this.connection.collection('tokens').findOne({ tokenId: order.tokenId });
+      await this.connection.collection('notifications').updateOne(
+        {
+          orderId,
+          address: order.seller,
+          type: NotificationType.Token_Sold,
+        },
+        {
+          $set: {
+            orderId,
+            address: order.seller,
+            type: NotificationType.Token_Sold,
+            date,
+            params: { tokenName: token.name, price: order.price, buyer: order.buyer },
+          },
+        },
+        { upsert: true },
+      );
+      await this.connection.collection('notifications').updateOne(
+        {
+          orderId,
+          address: order.seller,
+          type: NotificationType.Token_Sold,
+        },
+        {
+          $set: {
+            orderId,
+            address: token.royaltyOwner,
+            type: NotificationType.Royalties_Received,
+            date,
+            params: { tokenName: token.name, price: order.price },
+          },
+        },
+        { upsert: true },
+      );
     }
   }
 

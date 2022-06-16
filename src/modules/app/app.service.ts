@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { CommonResponse, OrderState, OrderType, User } from '../common/interfaces';
 import { InjectConnection } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import mongoose, { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Constants } from '../common/constants';
 import { AuthService } from '../auth/auth.service';
@@ -31,6 +31,42 @@ export class AppService {
       message: Constants.MSG_SUCCESS,
       data: await this.authService.login(user),
     };
+  }
+
+  async updateUserProfile(dto: UserProfileDTO, address: string): Promise<CommonResponse> {
+    const { name, description, avatar, coverImage } = dto;
+    await this.connection
+      .collection('users')
+      .updateOne({ address }, { $set: { name, description, avatar, coverImage } });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async getUserProfile(address: string): Promise<CommonResponse> {
+    const data = await this.connection.collection('users').findOne({ address });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
+
+  async getNotifications(address) {
+    const data = await this.connection
+      .collection('notifications')
+      .find({ address })
+      .project({ _id: { $toString: '$_id' } })
+      .toArray();
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
+
+  async readNotifications(address) {
+    await this.connection
+      .collection('notifications')
+      .updateMany({ address }, { $set: { read: 1 } });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async removeNotification(id: string, address: string) {
+    await this.connection
+      .collection('notifications')
+      .deleteOne({ _id: new mongoose.Types.ObjectId(id), address });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 
   async listBanner(location: string): Promise<CommonResponse> {
@@ -613,26 +649,5 @@ export class AppService {
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
-  }
-
-  async updateUserProfile(dto: UserProfileDTO, address: string): Promise<CommonResponse> {
-    const { name, description, avatar, coverImage } = dto;
-    await this.connection.collection('users').updateOne(
-      { address },
-      {
-        $set: {
-          name,
-          description,
-          avatar,
-          coverImage,
-        },
-      },
-    );
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
-  }
-
-  async getUserProfile(address: string): Promise<CommonResponse> {
-    const data = await this.connection.collection('users').findOne({ address });
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 }
