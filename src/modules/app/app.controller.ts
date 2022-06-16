@@ -110,6 +110,12 @@ export class AppController {
     return await this.appService.removeNotification(id, req.user.address);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('/getUserCandidateTokens')
+  async getUserCandidateTokens(@Request() req): Promise<CommonResponse> {
+    return await this.appService.getUserCandidateTokens(req.user.address);
+  }
+
   @Get('/listBanner')
   async listBanner(@Query('location') location: string): Promise<CommonResponse> {
     return await this.appService.listBanner(location);

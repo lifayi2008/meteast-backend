@@ -77,6 +77,41 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 
+  async getUserCandidateTokens(address: string) {
+    const data = await this.connection
+      .collection('tokens')
+      .aggregate([
+        {
+          $lookup: {
+            from: 'orders',
+            let: { tokenId: '$tokenId' },
+            pipeline: [
+              { $sort: { createTime: -1 } },
+              { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+              { $replaceRoot: { newRoot: '$doc' } },
+              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+              { $project: { _id: 0, tokenId: 0 } },
+            ],
+            as: 'order',
+          },
+        },
+        { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
+        {
+          $match: {
+            $or: [
+              { royaltyOwner: address, order: { $exists: false } },
+              { 'order.orderState': 2, buyer: address },
+              { 'order.orderState': 3, seller: address },
+              { 'order.orderState': 4, seller: address },
+            ],
+          },
+        },
+      ])
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
+
   async listBanner(location: string): Promise<CommonResponse> {
     const data = await this.connection
       .collection('banners')
