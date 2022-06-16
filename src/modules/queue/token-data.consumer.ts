@@ -33,6 +33,7 @@ export class TokenDataConsumer {
       name: string;
       description: string;
       royaltyOwner: string;
+      royaltyFee: number;
       thumbnail: string;
     }>,
   ) {
@@ -45,6 +46,7 @@ export class TokenDataConsumer {
       job.data.name,
       job.data.description,
       job.data.royaltyOwner,
+      job.data.royaltyFee,
       job.data.thumbnail,
     );
   }

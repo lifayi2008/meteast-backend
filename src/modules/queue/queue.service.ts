@@ -57,15 +57,25 @@ export class QueueService {
     name: string,
     description: string,
     royaltyOwner: string,
+    royaltyFee: number,
     thumbnail: string,
   ) {
-    await this.connection
-      .collection('tokens')
-      .updateOne(
-        { tokenId },
-        { $set: { blockNumber, createTime, category, name, description, royaltyOwner, thumbnail } },
-        { upsert: true },
-      );
+    await this.connection.collection('tokens').updateOne(
+      { tokenId },
+      {
+        $set: {
+          blockNumber,
+          createTime,
+          category,
+          name,
+          description,
+          royaltyOwner,
+          royaltyFee,
+          thumbnail,
+        },
+      },
+      { upsert: true },
+    );
   }
 
   async updateOrder(
