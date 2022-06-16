@@ -24,6 +24,7 @@ export class OrderDataConsumer {
       orderState: OrderState;
       orderPrice: number;
       createTime: number;
+      isBlindBox: boolean;
     }>,
   ) {
     this.logger.log(`Processing job ['update-order-at-backend'] data: ${JSON.stringify(job.data)}`);
@@ -36,6 +37,7 @@ export class OrderDataConsumer {
       job.data.orderState,
       job.data.orderPrice,
       job.data.createTime,
+      job.data.isBlindBox,
     );
   }
 

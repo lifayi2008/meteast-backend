@@ -87,6 +87,7 @@ export class QueueService {
     orderState: OrderState,
     orderPrice: number,
     createTime: number,
+    isBlindBox: boolean,
   ) {
     await this.connection.collection('orders').updateOne(
       { orderId },
@@ -100,6 +101,7 @@ export class QueueService {
           createTime,
           blockNumberForPrice: blockNumber,
           blockNumberForBuyer: blockNumber,
+          isBlindBox,
         },
       },
       { upsert: true },
