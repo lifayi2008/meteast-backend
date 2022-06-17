@@ -22,6 +22,8 @@ import Web3 from 'web3';
 import { TokenQueryDTO } from './dto/TokenQueryDTO';
 import { QueryPageDTO } from '../common/QueryPageDTO';
 import { QueryByAddressDTO } from './dto/QueryByAddressDTO';
+import { NewBlindBoxDTO } from './dto/NewBlindBoxDTO';
+import { BlindBoxQueryDTO } from './dto/BlindBoxQueryDTO';
 
 @Controller()
 export class AppController {
@@ -191,24 +193,10 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('/incBlindBoxViews')
-  async incBlindBoxViews(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
-    dto.address = req.user.address;
-    return await this.appService.incBlindBoxViews(dto);
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Post('/incTokenLikes')
   async incTokenLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
     return await this.appService.incTokenLikes(dto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('/incBlindBoxLikes')
-  async incBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
-    dto.address = req.user.address;
-    return await this.appService.incBlindBoxLikes(dto);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -219,9 +207,34 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('/incBlindBoxViews')
+  async incBlindBoxViews(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
+    dto.address = req.user.address;
+    return await this.appService.incBlindBoxViews(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/incBlindBoxLikes')
+  async incBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
+    dto.address = req.user.address;
+    return await this.appService.incBlindBoxLikes(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('/decBlindBoxLikes')
   async decBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
     return await this.appService.decBlindBoxLikes(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/createBlindBox')
+  async createBlindBox(@Body() dto: NewBlindBoxDTO, @Request() req): Promise<CommonResponse> {
+    return await this.appService.createBlindBox(dto, req.user);
+  }
+
+  @Post('/listMarketBlindBoxes')
+  async listMarketBlindBoxes(@Body() dto: BlindBoxQueryDTO): Promise<CommonResponse> {
+    return await this.appService.listMarketBlindBoxes(dto);
   }
 }

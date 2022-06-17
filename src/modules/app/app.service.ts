@@ -11,6 +11,8 @@ import { TokenQueryDTO } from './dto/TokenQueryDTO';
 import { QueryByAddressDTO } from './dto/QueryByAddressDTO';
 import { SubService } from './sub.service';
 import { QueryPageDTO } from '../common/QueryPageDTO';
+import { NewBlindBoxDTO } from './dto/NewBlindBoxDTO';
+import { BlindBoxQueryDTO } from './dto/BlindBoxQueryDTO';
 
 @Injectable()
 export class AppService {
@@ -623,21 +625,6 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 
-  async incBlindBoxViews(viewOrLikeDTO: ViewOrLikeDTO) {
-    const { address, blindBoxIndex } = viewOrLikeDTO;
-
-    const result = await this.connection
-      .collection('blind_box_views')
-      .replaceOne({ blindBoxIndex, address }, { blindBoxIndex, address }, { upsert: true });
-
-    if (result.upsertedCount === 1) {
-      await this.connection
-        .collection('blind_box_views_likes')
-        .updateOne({ blindBoxIndex }, { $inc: { views: 1 } }, { upsert: true });
-    }
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
-  }
-
   async incTokenLikes(viewOrLikeDTO: ViewOrLikeDTO) {
     const { address, tokenId } = viewOrLikeDTO;
 
@@ -649,21 +636,6 @@ export class AppService {
       await this.connection.collection('tokens').updateOne({ tokenId }, { $inc: { likes: 1 } });
     }
 
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
-  }
-
-  async incBlindBoxLikes(viewOrLikeDTO: ViewOrLikeDTO) {
-    const { address, blindBoxIndex } = viewOrLikeDTO;
-
-    const result = await this.connection
-      .collection('blind_box_likes')
-      .replaceOne({ blindBoxIndex, address }, { blindBoxIndex, address }, { upsert: true });
-
-    if (result.upsertedCount === 1) {
-      await this.connection
-        .collection('blind_box_views_likes')
-        .updateOne({ blindBoxIndex }, { $inc: { likes: 1 } }, { upsert: true });
-    }
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 
@@ -679,6 +651,36 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 
+  async incBlindBoxViews(viewOrLikeDTO: ViewOrLikeDTO) {
+    const { address, blindBoxIndex } = viewOrLikeDTO;
+
+    const result = await this.connection
+      .collection('blind_box_views')
+      .replaceOne({ blindBoxIndex, address }, { blindBoxIndex, address }, { upsert: true });
+
+    if (result.upsertedCount === 1) {
+      await this.connection
+        .collection('blind_box')
+        .updateOne({ _id: new mongoose.Types.ObjectId(blindBoxIndex) }, { $inc: { views: 1 } });
+    }
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async incBlindBoxLikes(viewOrLikeDTO: ViewOrLikeDTO) {
+    const { address, blindBoxIndex } = viewOrLikeDTO;
+
+    const result = await this.connection
+      .collection('blind_box_likes')
+      .replaceOne({ blindBoxIndex, address }, { blindBoxIndex, address }, { upsert: true });
+
+    if (result.upsertedCount === 1) {
+      await this.connection
+        .collection('blind_box')
+        .updateOne({ _id: new mongoose.Types.ObjectId(blindBoxIndex) }, { $inc: { likes: 1 } });
+    }
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
   async decBlindBoxLikes(viewOrLikeDTO: ViewOrLikeDTO) {
     const { address, blindBoxIndex } = viewOrLikeDTO;
 
@@ -688,10 +690,69 @@ export class AppService {
 
     if (result.deletedCount === 1) {
       await this.connection
-        .collection('blind_box_views_likes')
-        .updateOne({ blindBoxIndex }, { $inc: { likes: -1 } });
+        .collection('blind_box')
+        .updateOne({ _id: new mongoose.Types.ObjectId(blindBoxIndex) }, { $inc: { likes: -1 } });
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async createBlindBox(dto: NewBlindBoxDTO, user: User) {
+    await this.connection.collection('blind_box').insertOne({
+      ...dto,
+      createTime: Date.now(),
+      soldTokenIds: [],
+      seller: user.address,
+      sellerName: user.name,
+      sellerDescription: user.description,
+      views: 0,
+      likes: 0,
+      allSold: 0,
+    });
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
+  async listMarketBlindBoxes(dto: BlindBoxQueryDTO) {
+    const pipeline = [];
+    const match = { allSold: { $gt: 0 } };
+
+    if (dto.minPrice) {
+      match['price'] = { $gte: dto.minPrice };
+    }
+
+    if (dto.maxPrice) {
+      match['price'] = { $lte: dto.maxPrice };
+    }
+
+    if (dto.keyword) {
+      match['$or'] = [
+        { seller: dto.keyword },
+        { sellerName: { $regex: dto.keyword, $options: 'i' } },
+        { sellerDescription: { $regex: dto.keyword, $options: 'i' } },
+      ];
+    }
+
+    if (Object.getOwnPropertyNames(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
+
+    let data = [];
+    const total = await this.connection.collection('blind_box').count(match);
+
+    if (total > 0) {
+      data = await this.connection
+        .collection('blind_box')
+        .aggregate([
+          { $match: match },
+          { $project: { _id: { $toString: '$_id' } } },
+          { $sort: SubService.composeOrderClauseForMarketBlindBox(dto.orderType) },
+          { $skip: (dto.pageNum - 1) * dto.pageSize },
+          { $limit: dto.pageSize },
+        ])
+        .toArray();
+    }
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 }
