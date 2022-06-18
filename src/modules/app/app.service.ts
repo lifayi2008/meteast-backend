@@ -1,4 +1,9 @@
-import { HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CommonResponse, OrderState, OrderType, User } from '../common/interfaces';
 import { InjectConnection } from '@nestjs/mongoose';
 import mongoose, { Connection } from 'mongoose';
@@ -13,6 +18,7 @@ import { SubService } from './sub.service';
 import { QueryPageDTO } from '../common/QueryPageDTO';
 import { NewBlindBoxDTO } from './dto/NewBlindBoxDTO';
 import { BlindBoxQueryDTO } from './dto/BlindBoxQueryDTO';
+import { SoldBlindBoxDTO } from './dto/SoldBlindBoxDTO';
 
 @Injectable()
 export class AppService {
@@ -776,6 +782,10 @@ export class AppService {
       throw new InternalServerErrorException(`Blind box ${id} not found`);
     }
 
+    if (blindBox.tokenIds.length < count) {
+      throw new BadRequestException(`Blind box ${id} has only ${blindBox.tokenIds.length} tokens`);
+    }
+
     const selectedTokenIds = [];
     const tokenIds = blindBox.tokenIds;
 
@@ -796,5 +806,38 @@ export class AppService {
       .toArray();
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
+
+  async soldTokenFromBlindBox(dto: SoldBlindBoxDTO) {
+    const result = await this.connection
+      .collection('orders')
+      .find({ orderId: { $in: dto.orderIds } })
+      .project({ _id: 0, tokenId: 1 })
+      .toArray();
+
+    const soldTokenIds = [];
+    result.forEach((item) => {
+      soldTokenIds.push(item.tokenId);
+    });
+
+    const blindBox = await this.connection
+      .collection('blind_box')
+      .findOne({ _id: new mongoose.Types.ObjectId(dto.id) });
+
+    if (!blindBox) {
+      throw new InternalServerErrorException(`Blind box ${dto.id} not found`);
+    }
+
+    blindBox.tokenIds = blindBox.tokenIds.filter((id) => !soldTokenIds.includes(id));
+    blindBox.soldTokenIds = blindBox.soldTokenIds.concat(soldTokenIds);
+    blindBox.maxPurchases = blindBox.maxPurchases - soldTokenIds.length;
+    if (blindBox.tokenIds.length === 0) {
+      blindBox.allSold = Date.now();
+    }
+
+    await this.connection
+      .collection('blind_box')
+      .updateOne({ _id: new mongoose.Types.ObjectId(dto.id) }, blindBox);
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 }

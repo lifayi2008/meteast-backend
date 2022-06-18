@@ -25,6 +25,7 @@ import { QueryPageDTO } from '../common/QueryPageDTO';
 import { QueryByAddressDTO } from './dto/QueryByAddressDTO';
 import { NewBlindBoxDTO } from './dto/NewBlindBoxDTO';
 import { BlindBoxQueryDTO } from './dto/BlindBoxQueryDTO';
+import { SoldBlindBoxDTO } from './dto/SoldBlindBoxDTO';
 
 @Controller()
 export class AppController {
@@ -245,5 +246,10 @@ export class AppController {
     @Query('count', ParseIntPipe) count: number,
   ): Promise<CommonResponse> {
     return await this.appService.selectBlindBoxToken(id, count);
+  }
+
+  @Post('/soldTokenFromBlindBox')
+  async soldTokenFromBlindBox(@Body() dto: SoldBlindBoxDTO): Promise<CommonResponse> {
+    return await this.appService.soldTokenFromBlindBox(dto);
   }
 }
