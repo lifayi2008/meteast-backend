@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Logger,
+  ParseIntPipe,
   Post,
   Query,
   Request,
@@ -236,5 +237,13 @@ export class AppController {
   @Post('/listMarketBlindBoxes')
   async listMarketBlindBoxes(@Body() dto: BlindBoxQueryDTO): Promise<CommonResponse> {
     return await this.appService.listMarketBlindBoxes(dto);
+  }
+
+  @Get('/selectBlindBoxToken')
+  async selectBlindBoxToken(
+    @Query('id') id: string,
+    @Query('count', ParseIntPipe) count: number,
+  ): Promise<CommonResponse> {
+    return await this.appService.selectBlindBoxToken(id, count);
   }
 }

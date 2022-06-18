@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CommonResponse, OrderState, OrderType, User } from '../common/interfaces';
 import { InjectConnection } from '@nestjs/mongoose';
 import mongoose, { Connection } from 'mongoose';
@@ -713,7 +713,7 @@ export class AppService {
 
   async listMarketBlindBoxes(dto: BlindBoxQueryDTO) {
     const pipeline = [];
-    const match = { allSold: { $gt: 0 } };
+    const match = { allSold: 0 };
 
     if (dto.minPrice) {
       match['price'] = { $gte: dto.minPrice };
@@ -743,7 +743,20 @@ export class AppService {
         .collection('blind_box')
         .aggregate([
           { $match: match },
-          { $project: { _id: { $toString: '$_id' } } },
+          {
+            $project: {
+              _id: { $toString: '$_id' },
+              address: 1,
+              name: 1,
+              description: 1,
+              asset: 1,
+              thumbnail: 1,
+              blindPrice: 1,
+              saleBegin: 1,
+              maxPurchases: 1,
+              createTime: 1,
+            },
+          },
           { $sort: SubService.composeOrderClauseForMarketBlindBox(dto.orderType) },
           { $skip: (dto.pageNum - 1) * dto.pageSize },
           { $limit: dto.pageSize },
@@ -752,5 +765,36 @@ export class AppService {
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
+  async selectBlindBoxToken(id: string, count: number) {
+    const blindBox = await this.connection
+      .collection('blind_box')
+      .findOne({ _id: new mongoose.Types.ObjectId(id) });
+
+    if (!blindBox) {
+      throw new InternalServerErrorException(`Blind box ${id} not found`);
+    }
+
+    const selectedTokenIds = [];
+    const tokenIds = blindBox.tokenIds;
+
+    for (let i = 0; i < count; i++) {
+      const index = Math.floor(Math.random() * tokenIds.length);
+      selectedTokenIds.push(tokenIds[index]);
+      tokenIds.splice(index, 1);
+    }
+
+    const data = await this.connection
+      .collection('orders')
+      .find({
+        orderState: OrderState.Created,
+        isBlindBox: true,
+        tokenId: { $in: selectedTokenIds },
+      })
+      .project({ _id: 0, orderId: 1 })
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 }
