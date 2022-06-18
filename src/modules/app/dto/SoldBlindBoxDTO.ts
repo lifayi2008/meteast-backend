@@ -4,5 +4,5 @@ export class SoldBlindBoxDTO {
   @IsNotEmpty()
   id: string;
   @IsArray()
-  orderIds: string[];
+  orderIds: number[];
 }

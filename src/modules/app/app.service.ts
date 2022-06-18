@@ -815,9 +815,9 @@ export class AppService {
       .project({ _id: 0, tokenId: 1 })
       .toArray();
 
-    const soldTokenIds = [];
+    const soldTokenIdsInThisOrder = [];
     result.forEach((item) => {
-      soldTokenIds.push(item.tokenId);
+      soldTokenIdsInThisOrder.push(item.tokenId);
     });
 
     const blindBox = await this.connection
@@ -828,16 +828,21 @@ export class AppService {
       throw new InternalServerErrorException(`Blind box ${dto.id} not found`);
     }
 
-    blindBox.tokenIds = blindBox.tokenIds.filter((id) => !soldTokenIds.includes(id));
-    blindBox.soldTokenIds = blindBox.soldTokenIds.concat(soldTokenIds);
-    blindBox.maxPurchases = blindBox.maxPurchases - soldTokenIds.length;
+    const tokenIds = blindBox.tokenIds.filter((id) => !soldTokenIdsInThisOrder.includes(id));
+    const soldTokenIds = blindBox.soldTokenIds.concat(soldTokenIdsInThisOrder);
+    const maxPurchases =
+      blindBox.maxPurchases < tokenIds.length ? blindBox.maxPurchases : tokenIds.length;
+    let allSold = 0;
     if (blindBox.tokenIds.length === 0) {
-      blindBox.allSold = Date.now();
+      allSold = Date.now();
     }
 
     await this.connection
       .collection('blind_box')
-      .updateOne({ _id: new mongoose.Types.ObjectId(dto.id) }, blindBox);
+      .updateOne(
+        { _id: new mongoose.Types.ObjectId(dto.id) },
+        { $set: { tokenIds, soldTokenIds, maxPurchases, allSold } },
+      );
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
 }
