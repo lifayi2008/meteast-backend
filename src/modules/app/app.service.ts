@@ -703,8 +703,6 @@ export class AppService {
       createTime: Date.now(),
       soldTokenIds: [],
       seller: user.address,
-      sellerName: user.name,
-      sellerDescription: user.description,
       views: 0,
       likes: 0,
       allSold: 0,
@@ -728,8 +726,8 @@ export class AppService {
     if (dto.keyword) {
       match['$or'] = [
         { seller: dto.keyword },
-        { sellerName: { $regex: dto.keyword, $options: 'i' } },
-        { sellerDescription: { $regex: dto.keyword, $options: 'i' } },
+        { name: { $regex: dto.keyword, $options: 'i' } },
+        { description: { $regex: dto.keyword, $options: 'i' } },
       ];
     }
 
