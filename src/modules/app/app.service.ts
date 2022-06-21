@@ -49,7 +49,14 @@ export class AppService {
     await this.connection
       .collection('users')
       .updateOne({ address }, { $set: { name, description, avatar, coverImage } });
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+
+    const user = await this.connection.collection('users').findOne({ address });
+
+    return {
+      status: HttpStatus.OK,
+      message: Constants.MSG_SUCCESS,
+      data: await this.authService.login(user as unknown as User),
+    };
   }
 
   async getUserProfile(address: string): Promise<CommonResponse> {
@@ -170,43 +177,30 @@ export class AppService {
 
   async listMarketTokens(dto: TokenQueryDTO) {
     const pipeline = [];
-    const match1 = {};
+    const match = { orderState: 1 };
 
     if (dto.filterStatus) {
       if (dto.filterStatus === 'BUY NOW') {
-        match1['orderType'] = OrderType.Sale;
+        match['orderType'] = OrderType.Sale;
       } else if (dto.filterStatus === 'ON AUCTION') {
-        match1['orderType'] = OrderType.Auction;
+        match['orderType'] = OrderType.Auction;
       }
     }
 
     if (dto.minPrice) {
-      match1['price'] = { $gte: dto.minPrice };
+      match['price'] = { $gte: dto.minPrice };
     }
 
     if (dto.maxPrice) {
-      match1['price'] = { $lte: dto.maxPrice };
-    }
-
-    if (Object.getOwnPropertyNames(match1).length > 0) {
-      pipeline.push({ $match: match1 });
+      match['price'] = { $lte: dto.maxPrice };
     }
 
     pipeline.push(
       ...[
+        { $match: match },
         { $sort: { createTime: -1 } },
         { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
         { $replaceRoot: { newRoot: '$doc' } },
-        {
-          $lookup: {
-            from: 'token_on_order',
-            localField: 'tokenId',
-            foreignField: 'tokenId',
-            as: 'token_order',
-          },
-        },
-        { $unwind: '$token_order' },
-        { $match: { 'token_order.count': 1 } },
         {
           $lookup: { from: 'tokens', localField: 'tokenId', foreignField: 'tokenId', as: 'token' },
         },

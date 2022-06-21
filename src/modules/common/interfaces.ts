@@ -11,6 +11,7 @@ export interface User {
   name?: string;
   avatar?: string;
   description?: string;
+  userCoverImage?: string;
 }
 
 export enum OrderBy {
