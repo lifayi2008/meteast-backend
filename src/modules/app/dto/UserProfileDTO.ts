@@ -2,7 +2,7 @@ import { IsNotEmpty } from 'class-validator';
 
 export class UserProfileDTO {
   @IsNotEmpty()
-  did: string;
+  address: string;
   @IsNotEmpty()
   signature: string;
   name?: string;

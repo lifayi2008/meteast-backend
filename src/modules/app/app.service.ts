@@ -30,9 +30,12 @@ export class AppService {
 
   async login(user: User): Promise<CommonResponse> {
     const { address, ...rest } = user;
-    await this.connection
-      .collection('users')
-      .updateOne({ address }, { $set: rest }, { upsert: true });
+    const data = await this.connection.collection('users').findOne({ address });
+    if (!data) {
+      await this.connection
+        .collection('users')
+        .updateOne({ address }, { $set: rest }, { upsert: true });
+    }
 
     return {
       status: HttpStatus.OK,

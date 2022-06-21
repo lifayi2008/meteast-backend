@@ -84,7 +84,7 @@ export class AppController {
   @Post('/updateUserProfile')
   async updateUserProfile(@Body() dto: UserProfileDTO, @Request() req): Promise<CommonResponse> {
     const address = new Web3().eth.accounts.recover(
-      `Update profile with ${dto.did}`,
+      `Update profile with ${dto.address}`,
       dto.signature,
     );
     if (address !== req.user.address) {
