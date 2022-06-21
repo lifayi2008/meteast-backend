@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Logger,
   ParseIntPipe,
   Post,
@@ -36,6 +38,7 @@ export class AppController {
     DIDBackend.initialize(new MyDIDAdapter());
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/login')
   async login(@Body() loginDto: LoginDTO): Promise<CommonResponse> {
     if (!loginDto.address || loginDto.address.length !== Constants.ADDRESS_LENGTH) {
@@ -77,6 +80,7 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/updateUserProfile')
   async updateUserProfile(@Body() dto: UserProfileDTO, @Request() req): Promise<CommonResponse> {
     const address = new Web3().eth.accounts.recover(
@@ -131,36 +135,43 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/getFavoritesCollectible')
   async getFavoritesCollectible(@Request() req): Promise<CommonResponse> {
     return await this.appService.getFavoritesCollectible(req.user.address);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/listMarketTokens')
   async listMarketTokens(@Body() dto: TokenQueryDTO): Promise<CommonResponse> {
     return await this.appService.listMarketTokens(dto);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/listAllMyTokens')
   async listAllMyTokens(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
     return await this.appService.listAllMyTokens(dto);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/listOwnedTokensByAddress')
   async listOwnedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
     return await this.appService.listOwnedTokensByAddress(dto);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/listCreatedTokensByAddress')
   async listCreatedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
     return await this.appService.listCreatedTokensByAddress(dto);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/listSaleTokensByAddress')
   async listSaleTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
     return await this.appService.listSellTokensByAddress(dto, OrderState.Created);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/listSoldTokensByAddress')
   async listSoldTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
     return await this.appService.listSellTokensByAddress(dto, OrderState.Filled);
@@ -182,12 +193,14 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/listFavoritesTokens')
   async getFavoritesTokens(@Body() dto: QueryPageDTO, @Request() req): Promise<CommonResponse> {
     return await this.appService.listFavoritesTokens(dto, req.user.address);
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/incTokenViews')
   async incTokenViews(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
@@ -195,6 +208,7 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/incTokenLikes')
   async incTokenLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
@@ -202,6 +216,7 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/decTokenLikes')
   async decTokenLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
@@ -209,6 +224,7 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/incBlindBoxViews')
   async incBlindBoxViews(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
@@ -216,6 +232,7 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/incBlindBoxLikes')
   async incBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
@@ -223,6 +240,7 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/decBlindBoxLikes')
   async decBlindBoxLikes(@Body() dto: ViewOrLikeDTO, @Request() req): Promise<CommonResponse> {
     dto.address = req.user.address;
@@ -230,11 +248,13 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/createBlindBox')
   async createBlindBox(@Body() dto: NewBlindBoxDTO, @Request() req): Promise<CommonResponse> {
     return await this.appService.createBlindBox(dto, req.user);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/listMarketBlindBoxes')
   async listMarketBlindBoxes(@Body() dto: BlindBoxQueryDTO): Promise<CommonResponse> {
     return await this.appService.listMarketBlindBoxes(dto);
@@ -248,6 +268,7 @@ export class AppController {
     return await this.appService.selectBlindBoxToken(id, count);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('/soldTokenFromBlindBox')
   async soldTokenFromBlindBox(@Body() dto: SoldBlindBoxDTO): Promise<CommonResponse> {
     return await this.appService.soldTokenFromBlindBox(dto);
