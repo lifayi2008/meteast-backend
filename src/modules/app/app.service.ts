@@ -260,24 +260,17 @@ export class AppService {
 
   async getMarketTokenByTokenId(tokenId: string) {
     const data = await this.connection
-      .collection('tokens')
+      .collection('orders')
       .aggregate([
-        { $match: { tokenId } },
+        { $match: { tokenId, orderState: 1 } },
+        { $sort: { createTime: -1 } },
+        { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+        { $replaceRoot: { newRoot: '$doc' } },
         {
-          $lookup: {
-            from: 'orders',
-            let: { tokenId: '$tokenId' },
-            pipeline: [
-              { $sort: { createTime: -1 } },
-              { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
-              { $replaceRoot: { newRoot: '$doc' } },
-              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
-              { $project: { _id: 0, tokenId: 0 } },
-            ],
-            as: 'order',
-          },
+          $lookup: { from: 'tokens', localField: 'tokenId', foreignField: 'tokenId', as: 'token' },
         },
-        { $unwind: { path: '$order' } },
+        { $unwind: '$token' },
+        { $project: { _id: 0, 'token._id': 0, 'token.tokenId': 0 } },
       ])
       .toArray();
 
