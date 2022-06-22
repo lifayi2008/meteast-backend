@@ -147,6 +147,11 @@ export class AppController {
     return await this.appService.listMarketTokens(dto);
   }
 
+  @Get('/getMarketTokenByTokenId')
+  async getMarketTokenByTokenId(@Query('tokenId') tokenId: string): Promise<CommonResponse> {
+    return await this.appService.getMarketTokenByTokenId(tokenId);
+  }
+
   @HttpCode(HttpStatus.OK)
   @Post('/listAllMyTokens')
   async listAllMyTokens(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {

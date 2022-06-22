@@ -177,7 +177,7 @@ export class AppService {
 
   async listMarketTokens(dto: TokenQueryDTO) {
     const pipeline = [];
-    const match = { orderState: 1 };
+    const match = { orderState: 1, isBlindBox: false };
 
     if (dto.filterStatus) {
       if (dto.filterStatus === 'BUY NOW') {
@@ -256,6 +256,36 @@ export class AppService {
     }
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+  }
+
+  async getMarketTokenByTokenId(tokenId: string) {
+    const data = await this.connection
+      .collection('tokens')
+      .aggregate([
+        { $match: { tokenId } },
+        {
+          $lookup: {
+            from: 'orders',
+            let: { tokenId: '$tokenId' },
+            pipeline: [
+              { $sort: { createTime: -1 } },
+              { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+              { $replaceRoot: { newRoot: '$doc' } },
+              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+              { $project: { _id: 0, tokenId: 0 } },
+            ],
+            as: 'order',
+          },
+        },
+        { $unwind: { path: '$order' } },
+      ])
+      .toArray();
+
+    return {
+      status: HttpStatus.OK,
+      message: Constants.MSG_SUCCESS,
+      data: data.length > 0 ? data[0] : {},
+    };
   }
 
   async listAllMyTokens(dto: QueryByAddressDTO) {
