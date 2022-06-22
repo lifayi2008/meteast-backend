@@ -177,7 +177,7 @@ export class AppService {
 
   async listMarketTokens(dto: TokenQueryDTO) {
     const pipeline = [];
-    const match = { orderState: 1, isBlindBox: false };
+    const match = { orderState: 1 };
 
     if (dto.filterStatus) {
       if (dto.filterStatus === 'BUY NOW') {
@@ -278,6 +278,7 @@ export class AppService {
           },
         },
         { $unwind: { path: '$order' } },
+        { $project: { _id: 0 } },
       ])
       .toArray();
 
