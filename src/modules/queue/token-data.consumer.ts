@@ -46,5 +46,7 @@ export class TokenDataConsumer {
       job.data.royaltyFee,
       job.data.thumbnail,
     );
+
+    return true;
   }
 }

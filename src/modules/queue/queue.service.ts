@@ -134,49 +134,49 @@ export class QueueService {
     }
 
     //send notifications to seller and royalty owner
-    if (orderState === OrderState.Filled && result.modifiedCount === 1) {
-      await Sleep(10000);
-      const date = Date.now();
-      const order = await this.connection.collection('orders').findOne({ orderId });
-      const token = await this.connection.collection('tokens').findOne({ tokenId: order.tokenId });
-      await this.connection.collection('notifications').updateOne(
-        {
-          orderId,
-          address: order.seller,
-          type: NotificationType.Token_Sold,
-        },
-        {
-          $set: {
-            orderId,
-            address: order.seller,
-            type: NotificationType.Token_Sold,
-            date,
-            params: { tokenName: token.name, price: order.orderPrice, buyer: order.buyer },
-          },
-        },
-        { upsert: true },
-      );
-      await this.connection.collection('notifications').updateOne(
-        {
-          orderId,
-          address: order.seller,
-          type: NotificationType.RoyaltyFee_Received,
-        },
-        {
-          $set: {
-            orderId,
-            address: token.royaltyOwner,
-            type: NotificationType.RoyaltyFee_Received,
-            date,
-            params: {
-              tokenName: token.name,
-              royaltyFee: (token.royaltyFee / 100 / 10000) * order.orderPrice,
-            },
-          },
-        },
-        { upsert: true },
-      );
-    }
+    // if (orderState === OrderState.Filled && result.modifiedCount === 1) {
+    //   await Sleep(1000);
+    //   const date = Date.now();
+    //   const order = await this.connection.collection('orders').findOne({ orderId });
+    //   const token = await this.connection.collection('tokens').findOne({ tokenId: order.tokenId });
+    //   await this.connection.collection('notifications').updateOne(
+    //     {
+    //       orderId,
+    //       address: order.seller,
+    //       type: NotificationType.Token_Sold,
+    //     },
+    //     {
+    //       $set: {
+    //         orderId,
+    //         address: order.seller,
+    //         type: NotificationType.Token_Sold,
+    //         date,
+    //         params: { tokenName: token.name, price: order.orderPrice, buyer: order.buyer },
+    //       },
+    //     },
+    //     { upsert: true },
+    //   );
+    //   await this.connection.collection('notifications').updateOne(
+    //     {
+    //       orderId,
+    //       address: order.seller,
+    //       type: NotificationType.RoyaltyFee_Received,
+    //     },
+    //     {
+    //       $set: {
+    //         orderId,
+    //         address: token.royaltyOwner,
+    //         type: NotificationType.RoyaltyFee_Received,
+    //         date,
+    //         params: {
+    //           tokenName: token.name,
+    //           royaltyFee: (token.royaltyFee / 100 / 10000) * order.orderPrice,
+    //         },
+    //       },
+    //     },
+    //     { upsert: true },
+    //   );
+    // }
   }
 
   async updateOrderBuyer(blockNumber: number, orderId: number, buyer: string) {

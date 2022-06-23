@@ -39,6 +39,8 @@ export class OrderDataConsumer {
       job.data.createTime,
       job.data.isBlindBox,
     );
+
+    return true;
   }
 
   @Process('update-order-price')
@@ -51,6 +53,8 @@ export class OrderDataConsumer {
       job.data.orderId,
       job.data.orderPrice,
     );
+
+    return true;
   }
 
   @Process('update-order-state')
@@ -63,6 +67,8 @@ export class OrderDataConsumer {
       job.data.orderId,
       job.data.orderState,
     );
+
+    return true;
   }
 
   @Process('update-order-buyer')
@@ -73,5 +79,7 @@ export class OrderDataConsumer {
       job.data.orderId,
       job.data.buyer,
     );
+
+    return true;
   }
 }
