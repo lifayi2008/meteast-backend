@@ -27,7 +27,7 @@ export class OrderDataConsumer {
       isBlindBox: boolean;
     }>,
   ) {
-    this.logger.log(`Processing job ['new-order'] data: ${JSON.stringify(job.data)}`);
+    this.logger.log(`Processing job ['new-order'] orderId: ${JSON.stringify(job.data.orderId)}`);
     await this.queueService.updateOrder(
       job.data.blockNumber,
       job.data.tokenId,

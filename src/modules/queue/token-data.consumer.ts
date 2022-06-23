@@ -34,7 +34,7 @@ export class TokenDataConsumer {
       thumbnail: string;
     }>,
   ) {
-    this.logger.log(`Processing job ['token-create'] data: ${JSON.stringify(job.data)}`);
+    this.logger.log(`Processing job ['token-create'] tokenId: ${JSON.stringify(job.data.tokenId)}`);
     await this.queueService.createToken(
       job.data.tokenId,
       job.data.blockNumber,
