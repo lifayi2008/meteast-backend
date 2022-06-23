@@ -142,20 +142,18 @@ export class AppService {
   }
 
   async getPopularityOfTokens(pageNum: number, pageSize: number): Promise<CommonResponse> {
-    const total = this.connection.collection('token_on_order').find({ count: 1 }).bufferedCount();
+    const total = this.connection.collection('orders').count({ orderState: 1 });
     const data = await this.connection
-      .collection('token_on_order')
+      .collection('orders')
       .aggregate([
-        { $match: { count: 1 } },
+        { $match: { orderState: 1 } },
+        { $sort: { createTime: -1 } },
+        { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+        { $replaceRoot: { newRoot: '$doc' } },
         {
-          $lookup: {
-            from: 'token_views_likes',
-            localField: 'tokenId',
-            foreignField: 'tokenId',
-            as: 'token',
-          },
+          $lookup: { from: 'tokens', localField: 'tokenId', foreignField: 'tokenId', as: 'token' },
         },
-        { $unwind: '$token' },
+        { $unwind: { path: '$token' } },
         { $sort: { 'token.likes': -1, 'token.views': -1 } },
         { $skip: (pageNum - 1) * pageSize },
         { $limit: pageSize },
@@ -271,8 +269,8 @@ export class AppService {
               { $sort: { createTime: -1 } },
               { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
               { $replaceRoot: { newRoot: '$doc' } },
-              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
-              { $project: { _id: 0, tokenId: 0 } },
+              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] }, isBlindBox: false } },
+              { $project: { _id: 0, tokenId: 0, blockNumberForBuyer: 0, blockNumberForPrice: 0 } },
             ],
             as: 'order',
           },
@@ -346,68 +344,44 @@ export class AppService {
   async listOwnedTokensByAddress(dto: QueryByAddressDTO) {
     const address = dto.address;
 
-    const pipeline = [
-      {
-        $lookup: {
-          from: 'token_on_order',
-          let: { tokenId: '$tokenId' },
-          pipeline: [
-            { $sort: { blockNumber: -1 } },
-            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
-            { $replaceRoot: { newRoot: '$doc' } },
-            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
-            { $project: { _id: 0, tokenId: 0 } },
-          ],
-          as: 'token_orders',
-        },
-      },
-      { $project: { _id: 0 } },
-      {
-        $match: {
-          $or: [
-            { $and: [{ token_orders: { $size: 0 } }, { royaltyOwner: address }] },
-            { $and: [{ 'token_orders.count': 1 }, { 'token_orders.from': address }] },
-            { $and: [{ 'token_orders.count': 0 }, { 'token_orders.to': address }] },
-          ],
-        },
-      },
-      {
-        $lookup: {
-          from: 'orders',
-          let: { tokenId: '$tokenId' },
-          pipeline: [
-            { $sort: { createTime: -1 } },
-            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
-            { $replaceRoot: { newRoot: '$doc' } },
-            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
-            { $project: { _id: 0, tokenId: 0 } },
-          ],
-          as: 'orders',
-        },
-      },
-    ];
-
     const result = await this.connection
       .collection('tokens')
-      .aggregate([...pipeline, { $count: 'total' }])
+      .aggregate([
+        {
+          $lookup: {
+            from: 'orders',
+            let: { tokenId: '$tokenId' },
+            pipeline: [
+              { $sort: { createTime: -1 } },
+              { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+              { $replaceRoot: { newRoot: '$doc' } },
+              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+              { $project: { _id: 0, tokenId: 0 } },
+            ],
+            as: 'order',
+          },
+        },
+        { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
+        {
+          $match: {
+            $or: [
+              { royaltyOwner: address, order: { $exists: false } },
+              { 'order.orderState': OrderState.Created, 'order.seller': address },
+              { 'order.orderState': OrderState.Filled, 'order.buyer': address },
+              { 'order.orderState': OrderState.Cancelled, 'order.seller': address },
+              { 'order.orderState': OrderState.TakenDown, 'order.seller': address },
+            ],
+          },
+        },
+        { $count: 'total' },
+      ])
       .toArray();
 
-    const total = result.length > 0 ? result[0].total : 0;
-    let data = [];
-
-    if (total > 0) {
-      data = await this.connection
-        .collection('tokens')
-        .aggregate([
-          ...pipeline,
-          { $sort: SubService.composeOrderClauseForMyToken(dto.orderType) },
-          { $skip: (dto.pageNum - 1) * dto.pageSize },
-          { $limit: dto.pageSize },
-        ])
-        .toArray();
-    }
-
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
+    return {
+      status: HttpStatus.OK,
+      message: Constants.MSG_SUCCESS,
+      data: result.length > 0 ? result[0].total : 0,
+    };
   }
 
   async listCreatedTokensByAddress(dto: QueryByAddressDTO) {

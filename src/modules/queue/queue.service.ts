@@ -21,33 +21,33 @@ export class QueueService {
     this.contractMarket = this.configService.get('CONTRACT_MARKET');
   }
 
-  async onOffSale(tokenId: string, from: string, to: string, blockNumber: number) {
-    if (to === this.contractMarket) {
-      await this.connection
-        .collection('token_on_order')
-        .updateOne(
-          { tokenId, blockNumber },
-          { $inc: { count: 1 }, $set: { from } },
-          { upsert: true },
-        );
-    } else if (from === this.contractMarket) {
-      const result = await this.connection
-        .collection('token_on_order')
-        .updateOne({ tokenId, count: { $gt: 0 } }, { $inc: { count: -1 }, $set: { to } });
-      if (result.modifiedCount === 0) {
-        this.logger.warn(
-          `Token ${tokenId} is not in database, so put the [ off-sale ] job into the queue`,
-        );
-        await Sleep(1000);
-        await this.tokenDataQueue.add('token-on-off-sale', {
-          blockNumber,
-          from,
-          to,
-          tokenId,
-        });
-      }
-    }
-  }
+  // async onOffSale(tokenId: string, from: string, to: string, blockNumber: number) {
+  //   if (to === this.contractMarket) {
+  //     await this.connection
+  //       .collection('token_on_order')
+  //       .updateOne(
+  //         { tokenId, blockNumber },
+  //         { $inc: { count: 1 }, $set: { from } },
+  //         { upsert: true },
+  //       );
+  //   } else if (from === this.contractMarket) {
+  //     const result = await this.connection
+  //       .collection('token_on_order')
+  //       .updateOne({ tokenId, count: { $gt: 0 } }, { $inc: { count: -1 }, $set: { to } });
+  //     if (result.modifiedCount === 0) {
+  //       this.logger.warn(
+  //         `Token ${tokenId} is not in database, so put the [ off-sale ] job into the queue`,
+  //       );
+  //       await Sleep(1000);
+  //       await this.tokenDataQueue.add('token-on-off-sale', {
+  //         blockNumber,
+  //         from,
+  //         to,
+  //         tokenId,
+  //       });
+  //     }
+  //   }
+  // }
 
   async createToken(
     tokenId: string,
