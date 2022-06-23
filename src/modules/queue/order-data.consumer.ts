@@ -13,7 +13,7 @@ export class OrderDataConsumer {
     @InjectQueue('order-data-queue') private orderDataQueue: Queue,
   ) {}
 
-  @Process('update-order-at-backend')
+  @Process('new-order')
   async updateOrder(
     job: Job<{
       blockNumber: number;
@@ -27,7 +27,7 @@ export class OrderDataConsumer {
       isBlindBox: boolean;
     }>,
   ) {
-    this.logger.log(`Processing job ['update-order-at-backend'] data: ${JSON.stringify(job.data)}`);
+    this.logger.log(`Processing job ['new-order'] data: ${JSON.stringify(job.data)}`);
     await this.queueService.updateOrder(
       job.data.blockNumber,
       job.data.tokenId,
