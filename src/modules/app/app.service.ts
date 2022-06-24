@@ -847,4 +847,11 @@ export class AppService {
       );
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
   }
+
+  async getMarketBlindBoxByBlindBoxId(id: string) {
+    const data = await this.connection
+      .collection('blind_box')
+      .findOne({ _id: new mongoose.Types.ObjectId(id) });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
 }

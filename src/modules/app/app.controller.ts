@@ -265,6 +265,11 @@ export class AppController {
     return await this.appService.listMarketBlindBoxes(dto);
   }
 
+  @Get('/getBlindBoxById')
+  async getMarketBlindBoxByBlindBoxId(@Query('id') id: string): Promise<CommonResponse> {
+    return await this.appService.getMarketBlindBoxByBlindBoxId(id);
+  }
+
   @Get('/selectBlindBoxToken')
   async selectBlindBoxToken(
     @Query('id') id: string,
