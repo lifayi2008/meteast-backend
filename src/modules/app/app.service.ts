@@ -287,6 +287,15 @@ export class AppService {
     };
   }
 
+  async getTokenByIds(ids: string[]) {
+    const data = await this.connection
+      .collection('tokens')
+      .find({ tokenId: { $in: ids } })
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
+
   async listAllMyTokens(dto: QueryByAddressDTO) {
     const pipeline = [
       {
