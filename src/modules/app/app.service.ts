@@ -463,6 +463,7 @@ export class AppService {
           as: 'token',
         },
       },
+      { $unwind: { path: '$token' } },
       { $project: { _id: 0, 'token._id': 0 } },
     ];
 
