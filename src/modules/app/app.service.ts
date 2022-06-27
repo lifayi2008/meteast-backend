@@ -35,6 +35,8 @@ export class AppService {
       await this.connection
         .collection('users')
         .updateOne({ address }, { $set: rest }, { upsert: true });
+    } else {
+      user = { ...user, ...data };
     }
 
     return {
@@ -175,7 +177,7 @@ export class AppService {
 
   async listMarketTokens(dto: TokenQueryDTO) {
     const pipeline = [];
-    const match = { orderState: 1 };
+    const match = { orderState: 1, isBlindBox: false };
 
     if (dto.filterStatus) {
       if (dto.filterStatus === 'BUY NOW') {
@@ -186,11 +188,12 @@ export class AppService {
     }
 
     if (dto.minPrice) {
-      match['price'] = { $gte: dto.minPrice };
-    }
-
-    if (dto.maxPrice) {
-      match['price'] = { $lte: dto.maxPrice };
+      match['orderPrice'] = { $gte: dto.minPrice };
+      if (dto.maxPrice) {
+        match['orderPrice']['$lte'] = dto.maxPrice;
+      }
+    } else if (dto.maxPrice) {
+      match['orderPrice'] = { $lte: dto.maxPrice };
     }
 
     pipeline.push(
