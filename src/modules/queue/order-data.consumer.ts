@@ -24,6 +24,7 @@ export class OrderDataConsumer {
       orderState: OrderState;
       orderPrice: number;
       createTime: number;
+      endTime: number;
       isBlindBox: boolean;
     }>,
   ) {
@@ -37,6 +38,7 @@ export class OrderDataConsumer {
       job.data.orderState,
       job.data.orderPrice,
       job.data.createTime,
+      job.data.endTime,
       job.data.isBlindBox,
     );
 
