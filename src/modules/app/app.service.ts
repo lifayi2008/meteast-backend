@@ -468,6 +468,21 @@ export class AppService {
       },
       { $unwind: { path: '$token' } },
       { $project: { _id: 0, 'token._id': 0 } },
+      {
+        $lookup: {
+          from: 'orders',
+          let: { tokenId: '$tokenId' },
+          pipeline: [
+            { $sort: { createTime: -1 } },
+            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+            { $replaceRoot: { newRoot: '$doc' } },
+            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+            { $project: { _id: 0, tokenId: 0 } },
+          ],
+          as: 'order',
+        },
+      },
+      { $unwind: '$order' },
     ];
 
     const result = await this.connection
