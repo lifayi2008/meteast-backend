@@ -851,6 +851,10 @@ export class AppService {
       .project({ _id: 0, orderId: 1 })
       .toArray();
 
+    if (data.length < count) {
+      throw new InternalServerErrorException(`Blind box ${id} state exception`);
+    }
+
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 
