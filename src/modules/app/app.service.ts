@@ -734,7 +734,7 @@ export class AppService {
 
     const result = await this.connection
       .collection('blind_box_likes')
-      .deleteOne({ blindBoxIndex, address });
+      .deleteOne({ _id: new mongoose.Types.ObjectId(blindBoxIndex), address });
 
     if (result.deletedCount === 1) {
       await this.connection
@@ -803,6 +803,10 @@ export class AppService {
               saleBegin: 1,
               maxPurchases: 1,
               createTime: 1,
+              likes: 1,
+              views: 1,
+              tokenIds: 1,
+              soldTokenIds: 1,
             },
           },
           { $sort: SubService.composeOrderClauseForMarketBlindBox(dto.orderType) },
