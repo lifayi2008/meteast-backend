@@ -4,12 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import {
-  CommonResponse,
-  OrderState,
-  OrderType,
-  User,
-} from '../common/interfaces';
+import { CommonResponse, OrderState, OrderType, User } from '../common/interfaces';
 import { InjectConnection } from '@nestjs/mongoose';
 import mongoose, { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
