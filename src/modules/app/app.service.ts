@@ -374,15 +374,15 @@ export class AppService {
           as: 'order',
         },
       },
-      { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$order' } },
       {
         $match: {
           $or: [
             { royaltyOwner: address, order: { $exists: false } },
-            { 'order.orderState': OrderState.Created, 'order.seller': dto.address },
-            { 'order.orderState': OrderState.Filled, 'order.buyer': dto.address },
-            { 'order.orderState': OrderState.Cancelled, 'order.seller': dto.address },
-            { 'order.orderState': OrderState.TakenDown, 'order.seller': dto.address },
+            { 'order.orderState': OrderState.Created, 'order.seller': address },
+            { 'order.orderState': OrderState.Filled, 'order.buyer': address },
+            { 'order.orderState': OrderState.Cancelled, 'order.seller': address },
+            { 'order.orderState': OrderState.TakenDown, 'order.seller': address },
           ],
         },
       },
@@ -810,6 +810,7 @@ export class AppService {
               views: 1,
               tokenIds: 1,
               soldTokenIds: 1,
+              seller: 1,
             },
           },
           { $sort: SubService.composeOrderClauseForMarketBlindBox(dto.orderType) },

@@ -67,7 +67,7 @@ export class OrderDataConsumer {
     await this.queueService.updateOrderState(
       job.data.blockNumber,
       job.data.orderId,
-      job.data.orderState
+      job.data.orderState,
     );
 
     return true;
