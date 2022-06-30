@@ -120,9 +120,9 @@ export class AppService {
           $match: {
             $or: [
               { royaltyOwner: address, order: { $exists: false } },
-              { 'order.orderState': 2, buyer: address },
-              { 'order.orderState': 3, seller: address },
-              { 'order.orderState': 4, seller: address },
+              { 'order.orderState': 2, 'order.buyer': address },
+              { 'order.orderState': 3, 'order.seller': address },
+              { 'order.orderState': 4, 'order.seller': address },
             ],
           },
         },
