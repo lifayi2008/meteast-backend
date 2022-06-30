@@ -177,7 +177,10 @@ export class AppService {
 
   async listMarketTokens(dto: TokenQueryDTO) {
     const pipeline = [];
-    const match = { orderState: 1, isBlindBox: false };
+    const match = {
+      $or: [{ orderState: OrderState.Created }, { orderState: OrderState.Filled, filled: 0 }],
+      isBlindBox: false,
+    };
 
     if (dto.filterStatus) {
       if (dto.filterStatus === 'BUY NOW') {

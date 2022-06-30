@@ -104,6 +104,7 @@ export class QueueService {
           blockNumberForPrice: blockNumber,
           blockNumberForBuyer: blockNumber,
           isBlindBox,
+          filled: 0,
         },
       },
       { upsert: true },
@@ -119,10 +120,20 @@ export class QueueService {
       );
   }
 
-  async updateOrderState(blockNumber: number, orderId: number, orderState: OrderState) {
+  async updateOrderState(
+    blockNumber: number,
+    orderId: number,
+    orderState: OrderState,
+    filled: number,
+  ) {
+    const setParams: { orderState: OrderState; filled?: number } = { orderState };
+    if (filled) {
+      setParams.filled = filled;
+    }
+
     const result = await this.connection
       .collection('orders')
-      .updateOne({ orderId }, { $set: { orderState } });
+      .updateOne({ orderId }, { $set: setParams });
     if (result.matchedCount === 0) {
       this.logger.warn(
         `Order ${orderId} is not in database, so put the [ update-order-state ] job into the queue again`,
