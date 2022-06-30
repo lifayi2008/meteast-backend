@@ -61,14 +61,13 @@ export class OrderDataConsumer {
 
   @Process('update-order-state')
   async updateOrderState(
-    job: Job<{ blockNumber: number; orderId: number; orderState: OrderState; filled: number }>,
+    job: Job<{ blockNumber: number; orderId: number; orderState: OrderState }>,
   ) {
     this.logger.log(`Processing job ['update-order-state'] data: ${JSON.stringify(job.data)}`);
     await this.queueService.updateOrderState(
       job.data.blockNumber,
       job.data.orderId,
-      job.data.orderState,
-      job.data.filled,
+      job.data.orderState
     );
 
     return true;
