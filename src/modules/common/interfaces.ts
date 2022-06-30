@@ -42,6 +42,11 @@ export enum OrderState {
   TakenDown,
 }
 
+export enum OrderFilledState {
+  NotFilled = 0,
+  Filled = 1,
+}
+
 export enum NotificationType {
   Token_Sold = 1,
   RoyaltyFee_Received,

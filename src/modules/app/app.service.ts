@@ -4,7 +4,13 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { CommonResponse, OrderState, OrderType, User } from '../common/interfaces';
+import {
+  CommonResponse,
+  OrderFilledState,
+  OrderState,
+  OrderType,
+  User,
+} from '../common/interfaces';
 import { InjectConnection } from '@nestjs/mongoose';
 import mongoose, { Connection } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
@@ -323,8 +329,16 @@ export class AppService {
         $match: {
           $or: [
             { royaltyOwner: dto.address },
-            { 'order.orderState': OrderState.Created, 'order.seller': dto.address },
-            { 'order.orderState': OrderState.Filled, 'order.buyer': dto.address },
+            {
+              'order.orderState': { $in: [OrderState.Created, OrderState.Filled] },
+              'order.filled': OrderFilledState.NotFilled,
+              'order.seller': dto.address,
+            },
+            {
+              'order.orderState': OrderState.Filled,
+              'order.filled': OrderFilledState.Filled,
+              'order.buyer': dto.address,
+            },
             { 'order.orderState': OrderState.Cancelled, 'order.seller': dto.address },
             { 'order.orderState': OrderState.TakenDown, 'order.seller': dto.address },
           ],
@@ -379,10 +393,18 @@ export class AppService {
         $match: {
           $or: [
             { royaltyOwner: address, order: { $exists: false } },
-            { 'order.orderState': OrderState.Created, 'order.seller': address },
-            { 'order.orderState': OrderState.Filled, 'order.buyer': address },
-            { 'order.orderState': OrderState.Cancelled, 'order.seller': address },
-            { 'order.orderState': OrderState.TakenDown, 'order.seller': address },
+            {
+              'order.orderState': { $in: [OrderState.Created, OrderState.Filled] },
+              'order.filled': OrderFilledState.NotFilled,
+              'order.seller': dto.address,
+            },
+            {
+              'order.orderState': OrderState.Filled,
+              'order.filled': OrderFilledState.Filled,
+              'order.buyer': dto.address,
+            },
+            { 'order.orderState': OrderState.Cancelled, 'order.seller': dto.address },
+            { 'order.orderState': OrderState.TakenDown, 'order.seller': dto.address },
           ],
         },
       },
@@ -604,8 +626,16 @@ export class AppService {
           $match: {
             $or: [
               { royaltyOwner: address },
-              { 'order.orderState': OrderState.Created, 'order.seller': address },
-              { 'order.orderState': OrderState.Filled, 'order.buyer': address },
+              {
+                'order.orderState': { $in: [OrderState.Created, OrderState.Filled] },
+                'order.filled': OrderFilledState.NotFilled,
+                'order.seller': address,
+              },
+              {
+                'order.orderState': OrderState.Filled,
+                'order.filled': OrderFilledState.Filled,
+                'order.buyer': address,
+              },
               { 'order.orderState': OrderState.Cancelled, 'order.seller': address },
               { 'order.orderState': OrderState.TakenDown, 'order.seller': address },
             ],
@@ -645,8 +675,16 @@ export class AppService {
           $match: {
             $or: [
               { royaltyOwner: address, order: { $exists: false } },
-              { 'order.orderState': OrderState.Created, 'order.seller': address },
-              { 'order.orderState': OrderState.Filled, 'order.buyer': address },
+              {
+                'order.orderState': { $in: [OrderState.Created, OrderState.Filled] },
+                'order.filled': OrderFilledState.NotFilled,
+                'order.seller': address,
+              },
+              {
+                'order.orderState': OrderState.Filled,
+                'order.filled': OrderFilledState.Filled,
+                'order.buyer': address,
+              },
               { 'order.orderState': OrderState.Cancelled, 'order.seller': address },
               { 'order.orderState': OrderState.TakenDown, 'order.seller': address },
             ],
