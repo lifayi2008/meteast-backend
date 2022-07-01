@@ -374,7 +374,7 @@ export class AppService {
           as: 'order',
         },
       },
-      { $unwind: { path: '$order' } },
+      { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
       {
         $match: {
           $or: [
@@ -904,6 +904,34 @@ export class AppService {
     const data = await this.connection
       .collection('blind_box')
       .findOne({ _id: new mongoose.Types.ObjectId(id) });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
+
+  async getNFTFromBlindBox(dto: number[]) {
+    const data = await this.connection
+      .collection('orders')
+      .aggregate([
+        { $match: { orderId: { $in: dto }, isBlindBox: true } },
+        {
+          $lookup: {
+            from: 'tokens',
+            localField: 'tokenId',
+            foreignField: 'tokenId',
+            as: 'token',
+          },
+        },
+        { $unwind: '$token' },
+        {
+          $project: {
+            _id: 0,
+            name: '$token.name',
+            royaltyOwner: '$token.royaltyOwner',
+            thumbnail: '$token.thumbnail',
+          },
+        },
+      ])
+      .toArray();
+
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 }

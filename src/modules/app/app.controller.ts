@@ -288,4 +288,10 @@ export class AppController {
   async soldTokenFromBlindBox(@Body() dto: SoldBlindBoxDTO): Promise<CommonResponse> {
     return await this.appService.soldTokenFromBlindBox(dto);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('/getNFTFromBlindBox')
+  async getNFTFromBlindBox(@Body() dto: number[]): Promise<CommonResponse> {
+    return await this.appService.getNFTFromBlindBox(dto);
+  }
 }
