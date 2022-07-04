@@ -141,6 +141,13 @@ export class AppController {
     return await this.appService.getFavoritesCollectible(req.user.address);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('/getFavoritesCollectible')
+  async getFavoritesBlindBox(@Request() req): Promise<CommonResponse> {
+    return await this.appService.getFavoritesBlindBox(req.user.address);
+  }
+
   @HttpCode(HttpStatus.OK)
   @Post('/listMarketTokens')
   async listMarketTokens(@Body() dto: TokenQueryDTO): Promise<CommonResponse> {

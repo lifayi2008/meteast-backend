@@ -175,6 +175,16 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 
+  async getFavoritesBlindBox(address: string) {
+    const data = await this.connection
+      .collection('blind_box_likes')
+      .find({ address })
+      .project({ _id: 0, blindBoxIndex: 1 })
+      .toArray();
+
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
+  }
+
   async listMarketTokens(dto: TokenQueryDTO) {
     const pipeline = [];
     const match = {
