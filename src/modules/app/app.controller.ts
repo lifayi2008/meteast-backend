@@ -143,7 +143,7 @@ export class AppController {
 
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  @Post('/getFavoritesCollectible')
+  @Post('/getFavoritesBlindBox')
   async getFavoritesBlindBox(@Request() req): Promise<CommonResponse> {
     return await this.appService.getFavoritesBlindBox(req.user.address);
   }

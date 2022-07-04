@@ -747,7 +747,7 @@ export class AppService {
 
     const result = await this.connection
       .collection('blind_box_likes')
-      .deleteOne({ _id: new mongoose.Types.ObjectId(blindBoxIndex), address });
+      .deleteOne({ blindBoxIndex, address });
 
     if (result.deletedCount === 1) {
       await this.connection
