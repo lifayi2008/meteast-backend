@@ -200,13 +200,15 @@ export class AppService {
       }
     }
 
+    const priceMatch = {};
     if (dto.minPrice) {
-      match['orderPrice'] = { $gte: dto.minPrice };
-      if (dto.maxPrice) {
-        match['orderPrice']['$lte'] = dto.maxPrice;
-      }
-    } else if (dto.maxPrice) {
-      match['orderPrice'] = { $lte: dto.maxPrice };
+      priceMatch['$gte'] = dto.minPrice;
+    }
+    if (dto.maxPrice) {
+      priceMatch['$lte'] = dto.maxPrice;
+    }
+    if (Object.keys(priceMatch).length > 0) {
+      match['orderPrice'] = priceMatch;
     }
 
     pipeline.push(
@@ -682,8 +684,9 @@ export class AppService {
 
     if (result.upsertedCount === 1) {
       await this.connection.collection('tokens').updateOne({ tokenId }, { $inc: { views: 1 } });
+      return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
     }
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+    return { status: HttpStatus.ACCEPTED, message: Constants.MSG_SUCCESS };
   }
 
   async incTokenLikes(viewOrLikeDTO: ViewOrLikeDTO) {
@@ -695,9 +698,10 @@ export class AppService {
 
     if (result.upsertedCount === 1) {
       await this.connection.collection('tokens').updateOne({ tokenId }, { $inc: { likes: 1 } });
+      return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
     }
 
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+    return { status: HttpStatus.ACCEPTED, message: Constants.MSG_SUCCESS };
   }
 
   async decTokenLikes(viewOrLikeDTO: ViewOrLikeDTO) {
@@ -707,9 +711,10 @@ export class AppService {
 
     if (result.deletedCount === 1) {
       await this.connection.collection('tokens').updateOne({ tokenId }, { $inc: { likes: -1 } });
+      return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
     }
 
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+    return { status: HttpStatus.ACCEPTED, message: Constants.MSG_SUCCESS };
   }
 
   async incBlindBoxViews(viewOrLikeDTO: ViewOrLikeDTO) {
@@ -723,8 +728,9 @@ export class AppService {
       await this.connection
         .collection('blind_box')
         .updateOne({ _id: new mongoose.Types.ObjectId(blindBoxIndex) }, { $inc: { views: 1 } });
+      return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
     }
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+    return { status: HttpStatus.ACCEPTED, message: Constants.MSG_SUCCESS };
   }
 
   async incBlindBoxLikes(viewOrLikeDTO: ViewOrLikeDTO) {
@@ -738,8 +744,9 @@ export class AppService {
       await this.connection
         .collection('blind_box')
         .updateOne({ _id: new mongoose.Types.ObjectId(blindBoxIndex) }, { $inc: { likes: 1 } });
+      return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
     }
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+    return { status: HttpStatus.ACCEPTED, message: Constants.MSG_SUCCESS };
   }
 
   async decBlindBoxLikes(viewOrLikeDTO: ViewOrLikeDTO) {
@@ -753,9 +760,10 @@ export class AppService {
       await this.connection
         .collection('blind_box')
         .updateOne({ _id: new mongoose.Types.ObjectId(blindBoxIndex) }, { $inc: { likes: -1 } });
+      return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
     }
 
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+    return { status: HttpStatus.ACCEPTED, message: Constants.MSG_SUCCESS };
   }
 
   async createBlindBox(dto: NewBlindBoxDTO, user: User) {
@@ -776,12 +784,17 @@ export class AppService {
     const pipeline = [];
     const match = { allSold: 0 };
 
+    const priceMatch = {};
     if (dto.minPrice) {
-      match['price'] = { $gte: dto.minPrice };
+      priceMatch['$gte'] = dto.minPrice;
     }
 
     if (dto.maxPrice) {
-      match['price'] = { $lte: dto.maxPrice };
+      priceMatch['$lte'] = dto.maxPrice;
+    }
+
+    if (Object.keys(priceMatch).length > 0) {
+      match['blindPrice'] = priceMatch;
     }
 
     if (dto.keyword) {
