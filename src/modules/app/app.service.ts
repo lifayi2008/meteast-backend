@@ -142,7 +142,7 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 
-  async getPopularityOfTokens(pageNum: number, pageSize: number): Promise<CommonResponse> {
+  async getTokenPriceHistory(pageNum: number, pageSize: number): Promise<CommonResponse> {
     const total = this.connection.collection('orders').count({ orderState: 1 });
     const data = await this.connection
       .collection('orders')

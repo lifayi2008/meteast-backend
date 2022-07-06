@@ -22,7 +22,6 @@ import { ViewOrLikeDTO } from './dto/ViewOrLikeDTO';
 import { UserProfileDTO } from './dto/UserProfileDTO';
 import Web3 from 'web3';
 import { TokenQueryDTO } from './dto/TokenQueryDTO';
-import { QueryPageDTO } from '../common/QueryPageDTO';
 import { QueryByAddressDTO } from './dto/QueryByAddressDTO';
 import { NewBlindBoxDTO } from './dto/NewBlindBoxDTO';
 import { BlindBoxQueryDTO } from './dto/BlindBoxQueryDTO';
@@ -124,11 +123,6 @@ export class AppController {
   @Get('/listBanner')
   async listBanner(@Query('location') location: string): Promise<CommonResponse> {
     return await this.appService.listBanner(location);
-  }
-
-  @Post('/getPopularityOfTokens')
-  async getPopularityOfTokens(@Body() dto: QueryPageDTO): Promise<CommonResponse> {
-    return await this.appService.getPopularityOfTokens(dto.pageNum, dto.pageSize);
   }
 
   @UseGuards(JwtAuthGuard)
