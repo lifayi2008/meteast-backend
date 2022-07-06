@@ -84,4 +84,30 @@ export class OrderDataConsumer {
 
     return true;
   }
+
+  @Process('notification')
+  async notification(
+    job: Job<{
+      orderId: number;
+      address: string;
+      price: number;
+      royaltyOwner: string;
+      royaltyFee: number;
+      buyer: string;
+      timestamp: number;
+    }>,
+  ) {
+    this.logger.log(`Processing job ['notification'] data: ${JSON.stringify(job.data.orderId)}`);
+    await this.queueService.notification(
+      job.data.orderId,
+      job.data.address,
+      job.data.price,
+      job.data.royaltyOwner,
+      job.data.royaltyFee,
+      job.data.buyer,
+      job.data.timestamp,
+    );
+
+    return true;
+  }
 }

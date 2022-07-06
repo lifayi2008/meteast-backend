@@ -9,17 +9,6 @@ export class TokenDataConsumer {
 
   constructor(private queueService: QueueService) {}
 
-  // @Process('token-on-off-sale')
-  // async tokenSale(job: Job<{ blockNumber: number; tokenId: string; from: string; to: string }>) {
-  //   this.logger.log(`Processing job ['token-on-off-sale'] data: ${JSON.stringify(job.data)}`);
-  //   await this.queueService.onOffSale(
-  //     job.data.tokenId,
-  //     job.data.from,
-  //     job.data.to,
-  //     job.data.blockNumber,
-  //   );
-  // }
-
   @Process('token-create')
   async tokenCreate(
     job: Job<{
