@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Logger,
   ParseIntPipe,
   Post,
   Query,
@@ -31,8 +30,6 @@ import { SoldBlindBoxDTO } from './dto/SoldBlindBoxDTO';
 
 @Controller()
 export class AppController {
-  private readonly logger = new Logger('AppController');
-
   private user: any;
   constructor(private readonly appService: AppService) {
     DIDBackend.initialize(new MyDIDAdapter());
@@ -167,13 +164,13 @@ export class AppController {
   @HttpCode(HttpStatus.OK)
   @Post('/listAllMyTokens')
   async listAllMyTokens(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listAllMyTokens(dto);
+    return await this.appService.listAllMyTokens(dto, true);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('/listOwnedTokensByAddress')
   async listOwnedTokensByAddress(@Body() dto: QueryByAddressDTO): Promise<CommonResponse> {
-    return await this.appService.listOwnedTokensByAddress(dto);
+    return await this.appService.listAllMyTokens(dto, false);
   }
 
   @HttpCode(HttpStatus.OK)

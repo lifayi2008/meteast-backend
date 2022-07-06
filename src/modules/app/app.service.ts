@@ -15,7 +15,6 @@ import { UserProfileDTO } from './dto/UserProfileDTO';
 import { TokenQueryDTO } from './dto/TokenQueryDTO';
 import { QueryByAddressDTO } from './dto/QueryByAddressDTO';
 import { SubService } from './sub.service';
-import { QueryPageDTO } from '../common/QueryPageDTO';
 import { NewBlindBoxDTO } from './dto/NewBlindBoxDTO';
 import { BlindBoxQueryDTO } from './dto/BlindBoxQueryDTO';
 import { SoldBlindBoxDTO } from './dto/SoldBlindBoxDTO';
@@ -314,91 +313,87 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
 
-  async listAllMyTokens(dto: QueryByAddressDTO) {
-    const pipeline = [
-      {
-        $lookup: {
-          from: 'orders',
-          let: { tokenId: '$tokenId' },
-          pipeline: [
-            { $sort: { createTime: -1 } },
-            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
-            { $replaceRoot: { newRoot: '$doc' } },
-            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
-            { $project: { _id: 0, tokenId: 0 } },
-          ],
-          as: 'order',
-        },
-      },
-      { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
-      {
-        $match: {
-          $or: [
-            { royaltyOwner: dto.address },
-            { 'order.orderState': OrderState.Created, 'order.seller': dto.address },
-            { 'order.orderState': OrderState.Filled, 'order.buyer': dto.address },
-            { 'order.orderState': OrderState.Cancelled, 'order.seller': dto.address },
-            { 'order.orderState': OrderState.TakenDown, 'order.seller': dto.address },
-          ],
-        },
-      },
-      { $project: { _id: 0, blockNumber: 0 } },
-    ];
+  async listAllMyTokens(dto: QueryByAddressDTO, allTokens: boolean) {
+    const pipeline = [];
+    const match = {};
 
-    const result = await this.connection
-      .collection('tokens')
-      .aggregate([...pipeline, { $count: 'total' }])
-      .toArray();
-
-    const total = result.length > 0 ? result[0].total : 0;
-    let data = [];
-
-    if (total > 0) {
-      data = await this.connection
-        .collection('tokens')
-        .aggregate([
-          ...pipeline,
-          { $sort: SubService.composeOrderClauseForToken(dto.orderType) },
-          { $skip: (dto.pageNum - 1) * dto.pageSize },
-          { $limit: dto.pageSize },
-        ])
-        .toArray();
+    if (dto.keyword) {
+      match['$or'] = [
+        { royaltyOwner: dto.keyword },
+        { name: { $regex: dto.keyword, $options: 'i' } },
+        { description: { $regex: dto.keyword, $options: 'i' } },
+      ];
     }
 
-    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
-  }
+    if (dto.category) {
+      match['category'] = dto.category;
+    }
 
-  async listOwnedTokensByAddress(dto: QueryByAddressDTO) {
-    const address = dto.address;
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
 
-    const pipeline = [
-      {
-        $lookup: {
-          from: 'orders',
-          let: { tokenId: '$tokenId' },
-          pipeline: [
-            { $sort: { createTime: -1 } },
-            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
-            { $replaceRoot: { newRoot: '$doc' } },
-            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
-            { $project: { _id: 0, tokenId: 0 } },
-          ],
-          as: 'order',
+    pipeline.push(
+      ...[
+        {
+          $lookup: {
+            from: 'orders',
+            let: { tokenId: '$tokenId' },
+            pipeline: [
+              { $sort: { createTime: -1 } },
+              { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+              { $replaceRoot: { newRoot: '$doc' } },
+              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+              { $project: { _id: 0, tokenId: 0 } },
+            ],
+            as: 'order',
+          },
         },
-      },
-      { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
-      {
-        $match: {
-          $or: [
-            { royaltyOwner: address, order: { $exists: false } },
-            { 'order.orderState': OrderState.Created, 'order.seller': address },
-            { 'order.orderState': OrderState.Filled, 'order.buyer': address },
-            { 'order.orderState': OrderState.Cancelled, 'order.seller': address },
-            { 'order.orderState': OrderState.TakenDown, 'order.seller': address },
-          ],
-        },
-      },
-    ];
+        { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
+      ],
+    );
+
+    const orClause = [];
+
+    if (allTokens) {
+      orClause.push({ royaltyOwner: dto.address });
+    } else {
+      orClause.push({ royaltyOwner: dto.address, order: { $exists: false } });
+    }
+
+    orClause.push(
+      ...[
+        { 'order.orderState': OrderState.Created, 'order.seller': dto.address },
+        { 'order.orderState': OrderState.Filled, 'order.buyer': dto.address },
+        { 'order.orderState': OrderState.Cancelled, 'order.seller': dto.address },
+        { 'order.orderState': OrderState.TakenDown, 'order.seller': dto.address },
+      ],
+    );
+
+    const match2 = {
+      $or: orClause,
+    };
+
+    if (dto.filterStatus) {
+      if (dto.filterStatus === 'BUY NOW') {
+        match2['order.orderType'] = OrderType.Sale;
+      } else if (dto.filterStatus === 'ON AUCTION') {
+        match2['order.orderType'] = OrderType.Auction;
+      }
+    }
+
+    const priceMatch = {};
+    if (dto.minPrice) {
+      priceMatch['$gte'] = dto.minPrice * 1e18;
+    }
+    if (dto.maxPrice) {
+      priceMatch['$lte'] = dto.maxPrice * 1e18;
+    }
+    if (Object.keys(priceMatch).length > 0) {
+      match2['order.orderPrice'] = priceMatch;
+    }
+
+    pipeline.push(...[{ $match: match2 }, { $project: { _id: 0, blockNumber: 0 } }]);
 
     const result = await this.connection
       .collection('tokens')
@@ -424,26 +419,67 @@ export class AppService {
   }
 
   async listCreatedTokensByAddress(dto: QueryByAddressDTO) {
-    const royaltyOwner = dto.address;
+    const pipeline = [];
+    const match = { royaltyOwner: dto.address };
 
-    const pipeline = [
-      { $match: { royaltyOwner } },
-      {
-        $lookup: {
-          from: 'orders',
-          let: { tokenId: '$tokenId' },
-          pipeline: [
-            { $sort: { createTime: -1 } },
-            { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
-            { $replaceRoot: { newRoot: '$doc' } },
-            { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
-            { $project: { _id: 0, tokenId: 0 } },
-          ],
-          as: 'order',
+    if (dto.keyword) {
+      match['$or'] = [
+        { royaltyOwner: dto.keyword },
+        { name: { $regex: dto.keyword, $options: 'i' } },
+        { description: { $regex: dto.keyword, $options: 'i' } },
+      ];
+    }
+
+    if (dto.category) {
+      match['category'] = dto.category;
+    }
+
+    pipeline.push({ $match: match });
+
+    pipeline.push(
+      ...[
+        {
+          $lookup: {
+            from: 'orders',
+            let: { tokenId: '$tokenId' },
+            pipeline: [
+              { $sort: { createTime: -1 } },
+              { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+              { $replaceRoot: { newRoot: '$doc' } },
+              { $match: { $expr: { $eq: ['$tokenId', '$$tokenId'] } } },
+              { $project: { _id: 0, tokenId: 0 } },
+            ],
+            as: 'order',
+          },
         },
-      },
-      { $project: { _id: 0 } },
-    ];
+        { $project: { _id: 0 } },
+      ],
+    );
+
+    const match2 = {};
+
+    if (dto.filterStatus) {
+      if (dto.filterStatus === 'BUY NOW') {
+        match2['order.orderType'] = OrderType.Sale;
+      } else if (dto.filterStatus === 'ON AUCTION') {
+        match2['order.orderType'] = OrderType.Auction;
+      }
+    }
+
+    const priceMatch = {};
+    if (dto.minPrice) {
+      priceMatch['$gte'] = dto.minPrice * 1e18;
+    }
+    if (dto.maxPrice) {
+      priceMatch['$lte'] = dto.maxPrice * 1e18;
+    }
+    if (Object.keys(priceMatch).length > 0) {
+      match2['order.orderPrice'] = priceMatch;
+    }
+
+    if (Object.keys(match2).length > 0) {
+      pipeline.push({ $match: match2 });
+    }
 
     const result = await this.connection
       .collection('tokens')
@@ -470,9 +506,7 @@ export class AppService {
 
   async listSellTokensByAddress(dto: QueryByAddressDTO, orderState: OrderState) {
     const pipeline = [
-      {
-        $match: { orderState, seller: dto.address },
-      },
+      { $match: { orderState, seller: dto.address } },
       {
         $lookup: {
           from: 'tokens',
@@ -500,6 +534,44 @@ export class AppService {
       { $unwind: '$order' },
     ];
 
+    const match = {};
+    if (dto.keyword) {
+      match['$or'] = [
+        { 'token.royaltyOwner': dto.keyword },
+        { 'token.name': { $regex: dto.keyword, $options: 'i' } },
+        { 'token.description': { $regex: dto.keyword, $options: 'i' } },
+      ];
+    }
+
+    if (dto.category) {
+      match['token.category'] = dto.category;
+    }
+
+    if (dto.filterStatus) {
+      if (dto.filterStatus === 'BUY NOW') {
+        match['order.orderType'] = OrderType.Sale;
+      } else if (dto.filterStatus === 'ON AUCTION') {
+        match['order.orderType'] = OrderType.Auction;
+      }
+    }
+
+    const priceMatch = {};
+    if (dto.minPrice) {
+      priceMatch['$gte'] = dto.minPrice * 1e18;
+    }
+    if (dto.maxPrice) {
+      priceMatch['$lte'] = dto.maxPrice * 1e18;
+    }
+    if (Object.keys(priceMatch).length > 0) {
+      match['order.orderPrice'] = priceMatch;
+    }
+
+    if (Object.keys(match).length > 0) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      pipeline.push({ $match: match });
+    }
+
     const result = await this.connection
       .collection('orders')
       .aggregate([...pipeline, { $count: 'total' }])
@@ -513,7 +585,7 @@ export class AppService {
         .collection('orders')
         .aggregate([
           ...pipeline,
-          { $sort: SubService.composeOrderClauseForOrder(dto.orderType) },
+          { $sort: SubService.composeOrderClauseForFavorite(dto.orderType) },
           { $skip: (dto.pageNum - 1) * dto.pageSize },
           { $limit: dto.pageSize },
         ])
@@ -552,6 +624,44 @@ export class AppService {
       { $unwind: '$token' },
       { $project: { _id: 0, 'token._id': 0, 'token.tokenId': 0, 'token.blockNumber': 0 } },
     ];
+
+    const match = {};
+    if (dto.keyword) {
+      match['$or'] = [
+        { 'token.royaltyOwner': dto.keyword },
+        { 'token.name': { $regex: dto.keyword, $options: 'i' } },
+        { 'token.description': { $regex: dto.keyword, $options: 'i' } },
+      ];
+    }
+
+    if (dto.category) {
+      match['token.category'] = dto.category;
+    }
+
+    if (dto.filterStatus) {
+      if (dto.filterStatus === 'BUY NOW') {
+        match['order.orderType'] = OrderType.Sale;
+      } else if (dto.filterStatus === 'ON AUCTION') {
+        match['order.orderType'] = OrderType.Auction;
+      }
+    }
+
+    const priceMatch = {};
+    if (dto.minPrice) {
+      priceMatch['$gte'] = dto.minPrice * 1e18;
+    }
+    if (dto.maxPrice) {
+      priceMatch['$lte'] = dto.maxPrice * 1e18;
+    }
+    if (Object.keys(priceMatch).length > 0) {
+      match['order.orderPrice'] = priceMatch;
+    }
+
+    if (Object.keys(match).length > 0) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      pipeline.push({ $match: match });
+    }
 
     const result = await this.connection
       .collection('token_likes')

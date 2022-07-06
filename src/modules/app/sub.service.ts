@@ -42,13 +42,13 @@ export class SubService {
   static composeOrderClauseForToken(orderBy: OrderBy) {
     switch (orderBy) {
       case OrderBy.PriceHTL:
-        return { 'orders.orderPrice': -1 };
+        return { 'order.orderPrice': -1 };
       case OrderBy.PriceLTH:
-        return { 'orders.orderPrice': 1 };
+        return { 'order.orderPrice': 1 };
       case OrderBy.MOST_VIEWED:
-        return { 'token_orders.views': -1 };
+        return { views: -1 };
       case OrderBy.MOST_LIKED:
-        return { 'token_orders.likes': -1 };
+        return { likes: -1 };
       case OrderBy.MOST_RECENT:
         return { createTime: -1 };
       case OrderBy.OLDEST:
