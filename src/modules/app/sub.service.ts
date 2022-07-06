@@ -39,7 +39,7 @@ export class SubService {
     }
   }
 
-  static composeOrderClauseForMyToken(orderBy: OrderBy) {
+  static composeOrderClauseForToken(orderBy: OrderBy) {
     switch (orderBy) {
       case OrderBy.PriceHTL:
         return { 'orders.orderPrice': -1 };
@@ -58,7 +58,7 @@ export class SubService {
     }
   }
 
-  static composeOrderClauseForMySoldToken(orderBy: OrderBy) {
+  static composeOrderClauseForOrder(orderBy: OrderBy) {
     switch (orderBy) {
       case OrderBy.PriceHTL:
         return { orderPrice: -1 };
@@ -74,6 +74,25 @@ export class SubService {
         return { createTime: 1 };
       default:
         return { createTime: -1 };
+    }
+  }
+
+  static composeOrderClauseForFavorite(orderBy: OrderBy) {
+    switch (orderBy) {
+      case OrderBy.PriceHTL:
+        return { 'order.orderPrice': -1 };
+      case OrderBy.PriceLTH:
+        return { 'order.orderPrice': 1 };
+      case OrderBy.MOST_VIEWED:
+        return { 'token.views': -1 };
+      case OrderBy.MOST_LIKED:
+        return { 'token.likes': -1 };
+      case OrderBy.MOST_RECENT:
+        return { 'token.createTime': -1 };
+      case OrderBy.OLDEST:
+        return { 'token.createTime': 1 };
+      default:
+        return { 'token.createTime': -1 };
     }
   }
 }

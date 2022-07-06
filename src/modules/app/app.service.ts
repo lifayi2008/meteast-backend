@@ -202,10 +202,10 @@ export class AppService {
 
     const priceMatch = {};
     if (dto.minPrice) {
-      priceMatch['$gte'] = dto.minPrice;
+      priceMatch['$gte'] = dto.minPrice * 1e18;
     }
     if (dto.maxPrice) {
-      priceMatch['$lte'] = dto.maxPrice;
+      priceMatch['$lte'] = dto.maxPrice * 1e18;
     }
     if (Object.keys(priceMatch).length > 0) {
       match['orderPrice'] = priceMatch;
@@ -358,7 +358,7 @@ export class AppService {
         .collection('tokens')
         .aggregate([
           ...pipeline,
-          { $sort: SubService.composeOrderClauseForMyToken(dto.orderType) },
+          { $sort: SubService.composeOrderClauseForToken(dto.orderType) },
           { $skip: (dto.pageNum - 1) * dto.pageSize },
           { $limit: dto.pageSize },
         ])
@@ -413,7 +413,7 @@ export class AppService {
         .collection('tokens')
         .aggregate([
           ...pipeline,
-          { $sort: SubService.composeOrderClauseForMyToken(dto.orderType) },
+          { $sort: SubService.composeOrderClauseForToken(dto.orderType) },
           { $skip: (dto.pageNum - 1) * dto.pageSize },
           { $limit: dto.pageSize },
         ])
@@ -458,7 +458,7 @@ export class AppService {
         .collection('tokens')
         .aggregate([
           ...pipeline,
-          { $sort: SubService.composeOrderClauseForMySoldToken(dto.orderType) },
+          { $sort: SubService.composeOrderClauseForToken(dto.orderType) },
           { $skip: (dto.pageNum - 1) * dto.pageSize },
           { $limit: dto.pageSize },
         ])
@@ -513,7 +513,7 @@ export class AppService {
         .collection('orders')
         .aggregate([
           ...pipeline,
-          { $sort: SubService.composeOrderClauseForMySoldToken(dto.orderType) },
+          { $sort: SubService.composeOrderClauseForOrder(dto.orderType) },
           { $skip: (dto.pageNum - 1) * dto.pageSize },
           { $limit: dto.pageSize },
         ])
@@ -523,7 +523,7 @@ export class AppService {
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: { total, data } };
   }
 
-  async listFavoritesTokens(dto: QueryPageDTO, address: string) {
+  async listFavoritesTokens(dto: QueryByAddressDTO, address: string) {
     const pipeline = [
       { $match: { address } },
       {
@@ -566,7 +566,7 @@ export class AppService {
         .collection('token_likes')
         .aggregate([
           ...pipeline,
-          { $sort: { 'order.createTime': -1 } },
+          { $sort: SubService.composeOrderClauseForFavorite(dto.orderType) },
           { $skip: (dto.pageNum - 1) * dto.pageSize },
           { $limit: dto.pageSize },
         ])

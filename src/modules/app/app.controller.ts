@@ -212,7 +212,10 @@ export class AppController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('/listFavoritesTokens')
-  async getFavoritesTokens(@Body() dto: QueryPageDTO, @Request() req): Promise<CommonResponse> {
+  async getFavoritesTokens(
+    @Body() dto: QueryByAddressDTO,
+    @Request() req,
+  ): Promise<CommonResponse> {
     return await this.appService.listFavoritesTokens(dto, req.user.address);
   }
 
