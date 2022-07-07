@@ -78,6 +78,7 @@ export class AppService {
         params: 1,
         read: 1,
       })
+      .sort({ date: -1 })
       .toArray();
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
