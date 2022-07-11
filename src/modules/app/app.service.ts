@@ -1077,7 +1077,7 @@ export class AppService {
   async checkBlindBoxLike(id: string, address: string) {
     const data = await this.connection
       .collection('blind_box_likes')
-      .findOne({ blindBoxId: id, address });
+      .findOne({ blindBoxIndex: id, address });
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: !!data };
   }
 }
