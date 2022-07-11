@@ -295,4 +295,20 @@ export class AppController {
   async getNFTFromBlindBox(@Body() dto: number[]): Promise<CommonResponse> {
     return await this.appService.getNFTFromBlindBox(dto);
   }
+
+  @Get('/checkTokenLike')
+  async checkLike(
+    @Query('id') id: string,
+    @Query('address') address: string,
+  ): Promise<CommonResponse> {
+    return await this.appService.checkTokenLike(id, address);
+  }
+
+  @Get('/checkBlindBoxLike')
+  async checkBlindBoxLike(
+    @Query('id') id: string,
+    @Query('address') address: string,
+  ): Promise<CommonResponse> {
+    return await this.appService.checkBlindBoxLike(id, address);
+  }
 }

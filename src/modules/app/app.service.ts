@@ -1068,4 +1068,16 @@ export class AppService {
 
     return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data };
   }
+
+  async checkTokenLike(id: string, address: string) {
+    const data = await this.connection.collection('token_likes').findOne({ tokenId: id, address });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: !!data };
+  }
+
+  async checkBlindBoxLike(id: string, address: string) {
+    const data = await this.connection
+      .collection('blind_box_likes')
+      .findOne({ blindBoxId: id, address });
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS, data: !!data };
+  }
 }
