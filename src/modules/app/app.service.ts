@@ -508,6 +508,9 @@ export class AppService {
   async listSellTokensByAddress(dto: QueryByAddressDTO, orderState: OrderState) {
     const pipeline = [
       { $match: { orderState, seller: dto.address } },
+      { $sort: { createTime: -1 } },
+      { $group: { _id: '$tokenId', doc: { $first: '$$ROOT' } } },
+      { $replaceRoot: { newRoot: '$doc' } },
       {
         $lookup: {
           from: 'tokens',
