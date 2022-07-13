@@ -27,6 +27,10 @@ export class AppService {
     private authService: AuthService,
   ) {}
 
+  async check() {
+    return { status: HttpStatus.OK, message: Constants.MSG_SUCCESS };
+  }
+
   async login(user: User): Promise<CommonResponse> {
     const { address, ...rest } = user;
     const data = await this.connection.collection('users').findOne({ address });

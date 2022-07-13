@@ -34,6 +34,11 @@ export class AppController {
     DIDBackend.initialize(new MyDIDAdapter());
   }
 
+  @Get('/check')
+  async check(): Promise<CommonResponse> {
+    return await this.appService.check();
+  }
+
   @HttpCode(HttpStatus.OK)
   @Post('/login')
   async login(@Body() loginDto: LoginDTO): Promise<CommonResponse> {
